@@ -129,7 +129,7 @@ function teamCard(){
 var WC=[['flyweight','Flugvikt'],['bantamweight','Bantamvikt'],['featherweight','Fjädervikt'],['lightweight','Lättvikt'],['welterweight','Weltervikt'],['middleweight','Mellanvikt'],['light_heavyweight','Lätt tungvikt'],['heavyweight','Tungvikt'],['womens_strawweight','Dam: Stråvikt'],['womens_flyweight','Dam: Flugvikt'],['womens_bantamweight','Dam: Bantamvikt']];
 var STANCES=[['orthodox','Orthodox'],['southpaw','Southpaw'],['switch','Växlar (switch)']];
 var STYLES=[['Allround','Allround'],['Brottare','Brottare'],['Grappler','Grappler'],['Striker','Striker']];
-var FF=[['name','Namn'],['weight_class','Viktklass','s',WC],['stance','Stance','s',STANCES],['height_cm','Längd (cm)','n'],['reach_cm','Räckvidd (cm)','n'],['primary_style','Stil','s',STYLES],['injury_status','Skadestatus'],['current_training_focus','Träningsfokus','t']];
+var FF=[['name','Namn'],['weight_class','Viktklass','s',WC],['stance','Stance','s',STANCES],['height_cm','Längd (cm)','n'],['reach_cm','Räckvidd (cm)','n'],['primary_style','Stil','s',STYLES],['injury_status','Skadestatus (uppdatera vid behov)']];
 function selField(x,v){
   var cur=String(v==null?'':v),low=cur.toLowerCase().replace(/ /g,'_'),list=x[3],hit=null;
   list.forEach(function(o){if(o[0].toLowerCase()===low||o[1].toLowerCase()===cur.toLowerCase())hit=o[0]});
@@ -139,11 +139,11 @@ function selField(x,v){
 }
 function profFields(d){
   return '<h3 style="margin:18px 0 4px">Profil</h3><label>Nivå</label><div class="row"><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="p_amator"'+(d.amator?' checked':'')+'> Amatör</label><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="p_proffs"'+(d.proffs?' checked':'')+'> Proffs</label></div>'+
-   '<div id="p_ra"><label for="p_rek_amator">Amatörrekord (V-F-O)</label><input id="p_rek_amator" value="'+esc(d.rek_amator||'')+'"></div><div id="p_rp"><label for="p_rek_proffs">Proffsrekord (V-F-O)</label><input id="p_rek_proffs" value="'+esc(d.rek_proffs||'')+'"></div>'+
+   '<div id="p_ra"><label for="p_rek_amator">Amatörrekord (V-F-O), fyll i även som proffs</label><input id="p_rek_amator" value="'+esc(d.rek_amator||'')+'"></div><div id="p_rp"><label for="p_rek_proffs">Proffsrekord (V-F-O)</label><input id="p_rek_proffs" value="'+esc(d.rek_proffs||'')+'"></div>'+
    PF.map(function(x){var v=d[x[0]]||'';return '<label for="p_'+x[0]+'">'+x[1]+'</label>'+(x[2]==='t'?'<textarea id="p_'+x[0]+'">'+esc(v)+'</textarea>':'<input id="p_'+x[0]+'" value="'+esc(v)+'">')}).join('');
 }
 function profBind(){
-  function vis(){$('p_ra').style.display=$('p_amator').checked?'':'none';$('p_rp').style.display=$('p_proffs').checked?'':'none'}
+  function vis(){$('p_rp').style.display=$('p_proffs').checked?'':'none'}
   $('p_amator').onchange=vis;$('p_proffs').onchange=vis;vis();
 }
 function profRead(){
@@ -160,17 +160,17 @@ function fighterEdit(f){
   $('c').onclick=function(){render()};
   $('ff').onsubmit=function(e){e.preventDefault();var g=function(k){return $('f_'+k).value};if(!nz(g('name'))){fail($('m'),new Error('Namn saknas'));return}
     var pd=profRead();
-    var rec=[pd.amator&&pd.rek_amator?'Amatör '+pd.rek_amator:'',pd.proffs&&pd.rek_proffs?'Proffs '+pd.rek_proffs:''].filter(Boolean).join(' · ');
-    rpc('fp3_upsert_fighter',{p_id:f.id||null,p_name:g('name').trim(),p_weight_class:nz(g('weight_class')),p_stance:nz(g('stance')),p_height_cm:num(g('height_cm')),p_reach_cm:num(g('reach_cm')),p_fight_record:nz(rec),p_primary_style:nz(g('primary_style')),p_injury_status:nz(g('injury_status')),p_current_training_focus:nz(g('current_training_focus')),p_general_strengths:nz(pd.styrkor),p_general_weaknesses:nz(pd.svagheter)})
+    var rec=[pd.rek_amator?'Amatör '+pd.rek_amator:'',pd.proffs&&pd.rek_proffs?'Proffs '+pd.rek_proffs:''].filter(Boolean).join(' · ');
+    rpc('fp3_upsert_fighter',{p_id:f.id||null,p_name:g('name').trim(),p_weight_class:nz(g('weight_class')),p_stance:nz(g('stance')),p_height_cm:num(g('height_cm')),p_reach_cm:num(g('reach_cm')),p_fight_record:nz(rec),p_primary_style:nz(g('primary_style')),p_injury_status:nz(g('injury_status')),p_current_training_focus:f.current_training_focus||null,p_general_strengths:nz(pd.styrkor),p_general_weaknesses:nz(pd.svagheter)})
      .then(function(r){return rpc('fp3_set_profile',{p_id:r.id,p_data:pd}).then(function(){S.view=r.id;render()})}).catch(function(er){fail($('m'),er)})};
 }
-var PF=[['bakgrund','Bakgrund (var kommer fightern ifrån, hur började den?)','t'],['tranat_totalt','Hur länge har fightern tränat totalt?'],['tranat_mma','Hur länge har fightern tränat MMA?'],['andra_sporter','Andra kampsporter / tidigare sporter','t'],['pass_vecka','Pass per vecka just nu'],['hos_mig_sedan','Tränat hos mig sedan'],['tavlingsbakgrund','Tävlingsbakgrund','t'],['senaste_match','Senaste match (datum, motståndare, resultat)','t'],['nasta_match','Nästa match (datum, motståndare, viktklass)','t'],['styrkor','Styrkor','t'],['svagheter','Svagheter','t'],['mentalt','Mentalt (press, matchdag, motgång)','t'],['gamla_skador','Gamla skador','t'],['skonas','Ska skonas','t'],['fokus','Träningsfokus nu','t'],['mal','Mål det här halvåret','t'],['ovrigt','Övrigt','t']];
+var PF=[['bakgrund','Bakgrund (var kommer fightern ifrån, hur började den?)','t'],['tranat_totalt','Hur länge har fightern tränat totalt?'],['tranat_mma','Hur länge har fightern tränat MMA?'],['andra_sporter','Andra kampsporter / tidigare sporter','t'],['hos_mig_sedan','Tränat hos mig sedan'],['tavlingsbakgrund','Tävlingsbakgrund','t'],['styrkor','Styrkor','t'],['svagheter','Svagheter','t'],['mentalt','Mentalt (press, matchdag, motgång)','t'],['gamla_skador','Gamla skador','t'],['skonas','Ska skonas','t'],['mal','Mål det här halvåret','t'],['ovrigt','Övrigt','t']];
 function profileCard(id){
   var box=$('pf');if(!box)return;
   rpc('fp3_get_profile',{p_id:id}).then(function(d){d=d||{};
     var rows=PF.filter(function(x){return d[x[0]]}).map(function(x){return '<p><b>'+esc(x[1].replace(/ \(.*\)$/,''))+':</b> '+esc(d[x[0]])+'</p>'}).join('');
     var lv=[d.amator?'Amatör':'',d.proffs?'Proffs':''].filter(Boolean).join(' + ');
-    var rec=(d.amator&&d.rek_amator?'<p><b>Amatörrekord:</b> '+esc(d.rek_amator)+'</p>':'')+(d.proffs&&d.rek_proffs?'<p><b>Proffsrekord:</b> '+esc(d.rek_proffs)+'</p>':'');
+    var rec=(d.rek_amator?'<p><b>Amatörrekord:</b> '+esc(d.rek_amator)+'</p>':'')+(d.proffs&&d.rek_proffs?'<p><b>Proffsrekord:</b> '+esc(d.rek_proffs)+'</p>':'');
     box.innerHTML='<div class="row" style="justify-content:space-between"><h3 style="margin:0">Profil</h3><button class="btn sec sm" id="pe">Skriv / ändra</button></div>'+(lv?'<p><span class="pill">'+lv+'</span></p>':'')+rec+(rows||(lv?'':'<p class="muted small">Ingen profil ifylld än.</p>'));
     $('pe').onclick=function(){profileEdit(id,d)};
   }).catch(function(er){fail(box,er)});
