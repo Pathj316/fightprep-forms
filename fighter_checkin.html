@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <meta name="referrer" content="no-referrer">
-<title>Incheckning efter pass</title>
+<title>Min träning</title>
 <style>
 :root{
   --bg:#f4f5f7;--surface:#ffffff;--text:#14181f;--muted:#586272;--border:#d5dbe3;
@@ -50,6 +50,17 @@ label.f{display:block;font-weight:650;margin:0 0 6px}
 .muted{color:var(--muted)}
 .stack>*+*{margin-top:10px}
 [hidden]{display:none!important}
+select,input[type=number]{width:100%;font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:11px 12px;min-height:48px}
+.nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 16px}
+.nav button{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:11px;min-height:46px;font:inherit;font-weight:650;cursor:pointer}
+.nav button[aria-current=true]{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+.row2{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tag{display:inline-block;background:var(--chip);border:1px solid var(--border);border-radius:99px;padding:2px 10px;font-size:.84rem;margin:0 4px 4px 0}
+.ok{color:var(--ok);font-weight:650}
+.sm{min-height:40px;width:auto;padding:0 14px;font-size:.92rem}
+.txt{margin:6px 0 0;white-space:pre-wrap}
+h2{font-size:1.1rem;margin:0 0 8px}
+
 </style>
 </head>
 <body>
@@ -61,243 +72,186 @@ label.f{display:block;font-weight:650;margin:0 0 6px}
 <script>
 (function () {
   'use strict';
-
   var SUPABASE_URL = 'https://rgsbhkqwmilragkiogkr.supabase.co';
   var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnc2Joa3F3bWlscmFna2lvZ2tyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxOTk3MzQsImV4cCI6MjA4MDc3NTczNH0.cCtGnUwa3ynQNDUIYhhhXT6vT04MeaM1mn3flHgFEEU';
-
-  var TYPES = [
-    ['grappling', 'Grappling'], ['striking', 'Striking'], ['mma', 'MMA'], ['wrestling', 'Brottning'],
-    ['styrka', 'Styrka'], ['kondition', 'Kondition'], ['sparring', 'Sparring'], ['annat', 'Annat']
-  ];
+  var TYPES = [['styrka','Styrka'],['kondition','Kondition'],['mma','MMA'],['striking','Striking'],['grappling','Grappling'],['wrestling','Brottning'],['sparring','Sparring'],['annat','Annat']];
+  var TNAME = {}; TYPES.forEach(function (t) { TNAME[t[0]] = t[1]; });
+  var MINS = [30, 45, 60, 75, 90, 120];
   var ERRORS = {
     ogiltig_lank: 'Länken fungerar inte längre. Be din tränare om en ny.',
-    for_gammalt_datum: 'Datumet är för gammalt. Du kan checka in på pass de senaste 14 dagarna.',
+    for_gammalt_datum: 'Datumet är för gammalt. Du kan fylla i de senaste 14 dagarna.',
     ogiltigt_varde: 'Något svar är ogiltigt. Kontrollera och försök igen.',
-    for_manga: 'För många försök på kort tid. Vänta en stund och försök igen.'
+    for_manga: 'För många försök på kort tid. Vänta en stund och försök igen.',
+    hittades_inte: 'Passet hittades inte.'
   };
-
   var app = document.getElementById('app');
   var token = getToken();
-  var ctx = null;
+  var ctx = null, tab = 'today', weeklyData = null;
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmt(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
+  function getToken() { var m = location.hash.match(/[#&]t=([A-Za-z0-9]+)/) || location.search.match(/[?&]t=([A-Za-z0-9]+)/); return m ? m[1] : ''; }
+  function $(id) { return document.getElementById(id); }
+  function addDays(iso, n) { var d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function post(path, body) {
+    return fetch(SUPABASE_URL + path, { method: 'POST', headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().catch(function () { return null; }).then(function (j) { if (!r.ok) { var e = new Error((j && (j.message || j.error)) || ('Fel ' + r.status)); e.code = j && j.error; throw e; } return j; }); });
   }
-  function getToken() {
-    var m = location.hash.match(/[#&]t=([A-Za-z0-9]+)/) || location.search.match(/[?&]t=([A-Za-z0-9]+)/);
-    return m ? m[1] : '';
-  }
-  function pad(n) { return (n < 10 ? '0' : '') + n; }
-  function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
-  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) {} return null; }
-
-  function rpc(fn, body) {
-    return fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, {
-      method: 'POST',
-      headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    }).then(function (r) {
-      return r.json().catch(function () { return null; }).then(function (j) {
-        if (!r.ok) { throw new Error((j && j.message) || ('Fel ' + r.status)); }
-        return j;
-      });
-    });
-  }
-
-  function scale(name, from, to, cols) {
+  function rpc(fn, body) { return post('/rest/v1/rpc/' + fn, body); }
+  function scale(name, from, to, cols, val) {
     var h = '<div class="grid ' + cols + '">';
-    for (var i = from; i <= to; i++) {
-      h += '<label class="pick"><input type="radio" name="' + name + '" value="' + i + '"><span>' + i + '</span></label>';
-    }
+    for (var i = from; i <= to; i++) h += '<label class="pick"><input type="radio" name="' + name + '" value="' + i + '"' + (val === i ? ' checked' : '') + '><span>' + i + '</span></label>';
     return h + '</div>';
   }
+  function val(name) { var e = document.querySelector('input[name="' + name + '"]:checked'); return e ? e.value : null; }
+  function numv(id) { var v = ($(id).value || '').replace(',', '.').trim(); return v === '' ? null : Number(v); }
+  function showInvalid() { app.innerHTML = '<h1>Länken fungerar inte</h1><p class="sub">Den här länken är ogiltig eller avstängd. Be din tränare om en ny länk.</p>'; }
+  function say(el, msg, ok) { el.hidden = false; el.className = ok ? 'ok' : 'err'; el.textContent = msg; }
+  function errMsg(r) { return ERRORS[r && r.error] || 'Det gick inte att spara. Försök igen.'; }
 
+  function load() {
+    return rpc('fp5_context', { p_token: token }).then(function (c) {
+      if (!c || !c.ok) { showInvalid(); return; }
+      ctx = c; render();
+    }).catch(function () { app.innerHTML = '<h1>Något gick fel</h1><p class="sub">Kunde inte hämta dina uppgifter. Försök igen om en stund.</p>'; });
+  }
 
-  function fmt(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
-  function wfetch(mode) {
-    return fetch(SUPABASE_URL + '/functions/v1/fighter_weekly', {
-      method: 'POST',
-      headers: { apikey: ANON_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: token, mode: mode })
-    }).then(function (r) {
-      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('Fel ' + r.status)); e.code = j.error; throw e; } return j; });
+  function shell(inner) {
+    var tabs = [['today', 'Idag'], ['mine', 'Mina pass'], ['week', 'Analys']];
+    app.innerHTML = '<h1>Hej ' + esc(ctx.name || '') + '!</h1><p class="sub">Din träning. Det du skriver här sparas på din profil, och bara du och din tränare kan se det.</p>' +
+      '<div class="nav" role="tablist">' + tabs.map(function (t) { return '<button type="button" data-tab="' + t[0] + '"' + (tab === t[0] ? ' aria-current="true"' : '') + '>' + t[1] + '</button>'; }).join('') + '</div>' + inner;
+    Array.prototype.forEach.call(app.querySelectorAll('.nav button'), function (b) { b.onclick = function () { tab = b.getAttribute('data-tab'); render(); }; });
+  }
+
+  function render() {
+    if (tab === 'mine') return renderMine();
+    if (tab === 'week') return renderWeek();
+    return renderToday();
+  }
+
+  /* ---------- IDAG ---------- */
+  function todayDaily() { for (var i = 0; i < ctx.daily.length; i++) if (ctx.daily[i].day === ctx.today) return ctx.daily[i]; return null; }
+  function renderToday() {
+    var d = todayDaily();
+    var h = '<div class="card" id="dcard">' + (d ? dailySummary(d) : dailyForm(null)) + '</div>' +
+      '<div class="card"><h2>Efter pass</h2><p class="sub" style="margin-bottom:12px">Tränar du flera gånger om dagen? Logga varje pass för sig.</p><button class="btn" type="button" id="newpass">+ Logga ett pass</button></div>';
+    var todays = ctx.passes.filter(function (p) { return p.date === ctx.today; });
+    if (todays.length) h += '<div class="card"><h2>Dagens pass</h2>' + todays.map(passItem).join('') + '</div>';
+    shell(h);
+    $('newpass').onclick = function () { passForm(null); };
+    bindDaily(); bindPassItems();
+  }
+  function dailySummary(d) {
+    return '<div class="row2"><h2 style="margin:0">Morgonkoll</h2><span class="ok">✓ Klar</span></div><p class="sub" style="margin:6px 0 10px">Sömn ' + esc(d.sleep) + '/5' + (d.sleep_hours != null ? ' (' + esc(d.sleep_hours) + ' h)' : '') + ' · Energi ' + esc(d.energy) + '/5 · Ömhet ' + esc(d.soreness) + '/5 · Stress ' + esc(d.stress) + '/5' + (d.weight_kg != null ? ' · ' + esc(d.weight_kg) + ' kg' : '') + (d.pain ? ' · Värk: ' + esc(d.pain_location || 'ja') : '') + '</p><button class="btn sec sm" type="button" id="dedit">Ändra</button>';
+  }
+  function dailyForm(d) {
+    d = d || {};
+    return '<h2>Morgonkoll</h2><p class="sub" style="margin-bottom:12px">Tar 30 sekunder. En gång per dag.</p><form id="dform" novalidate>' +
+      '<fieldset class="card" style="padding:0;border:0;margin:0 0 14px"><legend>Hur många timmar sov du?<span class="hint">Valfritt</span></legend><input type="number" id="d_sh" inputmode="decimal" step="0.5" min="0" max="16" value="' + esc(d.sleep_hours == null ? '' : d.sleep_hours) + '" placeholder="t.ex. 7.5"></fieldset>' +
+      '<fieldset style="margin:0 0 14px"><legend>Hur bra sov du?</legend>' + scale('d_sleep', 1, 5, 'g5', d.sleep) + '<div class="ends"><span>Dåligt</span><span>Bra</span></div></fieldset>' +
+      '<fieldset style="margin:0 0 14px"><legend>Hur mycket energi har du?</legend>' + scale('d_energy', 1, 5, 'g5', d.energy) + '<div class="ends"><span>Slut</span><span>Full av energi</span></div></fieldset>' +
+      '<fieldset style="margin:0 0 14px"><legend>Hur ömma eller stela är musklerna?</legend>' + scale('d_sore', 1, 5, 'g5', d.soreness) + '<div class="ends"><span>Inte alls</span><span>Mycket</span></div></fieldset>' +
+      '<fieldset style="margin:0 0 14px"><legend>Hur stressad eller pressad känner du dig?</legend>' + scale('d_stress', 1, 5, 'g5', d.stress) + '<div class="ends"><span>Lugn</span><span>Mycket stressad</span></div></fieldset>' +
+      '<fieldset style="margin:0 0 14px"><legend>Vad väger du?<span class="hint">Valfritt, kg. Väg dig helst på morgonen.</span></legend><input type="number" id="d_w" inputmode="decimal" step="0.1" min="30" max="250" value="' + esc(d.weight_kg == null ? '' : d.weight_kg) + '"></fieldset>' +
+      '<fieldset style="margin:0 0 14px"><legend>Har du någon värk eller skada?</legend><div class="grid g2"><label class="pick"><input type="radio" name="d_pain" value="no"' + (d.pain === false ? ' checked' : '') + '><span>Nej</span></label><label class="pick"><input type="radio" name="d_pain" value="yes"' + (d.pain ? ' checked' : '') + '><span>Ja</span></label></div>' +
+      '<div id="d_pw" ' + (d.pain ? '' : 'hidden ') + 'style="margin-top:10px"><label class="f" for="d_pl">Var och hur illa?</label><input type="text" id="d_pl" maxlength="200" value="' + esc(d.pain_location || '') + '" placeholder="t.ex. vänster knä, ont vid knäböj"></div></fieldset>' +
+      '<p id="derr" hidden role="alert"></p><button class="btn" type="submit">Spara morgonkoll</button></form>';
+  }
+  function bindDaily() {
+    var ed = $('dedit'); if (ed) ed.onclick = function () { $('dcard').innerHTML = dailyForm(todayDaily()); bindDaily(); };
+    var f = $('dform'); if (!f) return;
+    f.addEventListener('change', function (e) { if (e.target && e.target.name === 'd_pain') $('d_pw').hidden = e.target.value !== 'yes'; });
+    f.onsubmit = function (e) {
+      e.preventDefault();
+      var sl = val('d_sleep'), en = val('d_energy'), so = val('d_sore'), st = val('d_stress'), pa = val('d_pain'), er = $('derr');
+      if (!sl || !en || !so || !st || !pa) { say(er, 'Svara på alla frågor utom de som är valfria.'); return; }
+      var btn = f.querySelector('button[type=submit]'); btn.disabled = true;
+      rpc('fp5_submit_daily', { p_token: token, p_day: ctx.today, p_sleep_hours: numv('d_sh'), p_sleep: +sl, p_energy: +en, p_soreness: +so, p_stress: +st, p_weight: numv('d_w'), p_pain: pa === 'yes', p_pain_location: pa === 'yes' ? $('d_pl').value : null })
+        .then(function (r) { if (!r || !r.ok) { btn.disabled = false; say(er, errMsg(r)); return; } return load(); })
+        .catch(function () { btn.disabled = false; say(er, 'Det gick inte att spara. Försök igen.'); });
+    };
+  }
+
+  /* ---------- PASS ---------- */
+  function passItem(p) {
+    return '<div style="border-top:1px solid var(--border);padding:10px 0"><div class="row2"><div><b>' + esc(p.date) + '</b>' + (p.pass_no > 1 ? ' · pass ' + esc(p.pass_no) : '') + '</div><button class="btn sec sm" type="button" data-edit="' + esc(p.id) + '">Ändra</button></div>' +
+      '<div style="margin-top:6px">' + (p.types || []).map(function (t) { return '<span class="tag">' + esc(TNAME[t] || t) + '</span>'; }).join('') + '<span class="tag">RPE ' + esc(p.rpe) + '</span>' + (p.minutes ? '<span class="tag">' + esc(p.minutes) + ' min</span>' : '') + (p.pain ? '<span class="tag">Värk: ' + esc(p.pain_location || 'ja') + '</span>' : '') + '</div>' +
+      (p.did ? '<p class="txt"><b>Gjorde:</b> ' + esc(p.did) + '</p>' : '') + (p.felt ? '<p class="txt"><b>Kändes:</b> ' + esc(p.felt) + '</p>' : '') + '</div>';
+  }
+  function bindPassItems() {
+    Array.prototype.forEach.call(app.querySelectorAll('[data-edit]'), function (b) {
+      b.onclick = function () { var id = b.getAttribute('data-edit'); for (var i = 0; i < ctx.passes.length; i++) if (ctx.passes[i].id === id) { passForm(ctx.passes[i]); return; } };
     });
   }
-  function weekly() {
-    var box = document.getElementById('wk');
-    if (!box) { return; }
+  function passForm(p) {
+    var edit = !!p; p = p || {};
+    var types = p.types || [];
+    var mins = p.minutes, chip = MINS.indexOf(mins) >= 0;
+    var min = addDays(ctx.today, -14);
+    shell('<form id="pform" novalidate><div class="card"><h2>' + (edit ? 'Ändra pass' : 'Logga ett pass') + '</h2>' +
+      '<fieldset><legend>Vad tränade du?<span class="hint">Välj en eller flera</span></legend><div class="grid g2">' + TYPES.map(function (t) {
+        return '<label class="pick"><input type="checkbox" name="ptype" value="' + t[0] + '"' + (types.indexOf(t[0]) >= 0 ? ' checked' : '') + '><span>' + t[1] + '</span></label>'; }).join('') + '</div></fieldset></div>' +
+      '<div class="card"><label class="f" for="pdate">Datum</label><input type="date" id="pdate" value="' + esc(p.date || ctx.today) + '" min="' + min + '" max="' + ctx.today + '"></div>' +
+      '<div class="card"><fieldset><legend>Hur tungt var passet?<span class="hint">1 = mycket lätt, 5 = jobbigt men jämnt, 8 = mycket tungt, 10 = maximalt</span></legend>' + scale('prpe', 1, 10, 'g5', p.rpe) + '</fieldset></div>' +
+      '<div class="card"><fieldset><legend>Hur länge höll du på?<span class="hint">Minuter</span></legend><div class="grid g5" style="grid-template-columns:repeat(3,1fr)">' + MINS.map(function (m) {
+        return '<label class="pick"><input type="radio" name="pmin" value="' + m + '"' + (chip && mins === m ? ' checked' : '') + '><span>' + m + '</span></label>'; }).join('') + '</div>' +
+      '<label class="f" for="pmc" style="margin-top:10px">Annan tid (min)</label><input type="number" id="pmc" inputmode="numeric" min="1" max="600" value="' + (!chip && mins ? esc(mins) : '') + '"></fieldset></div>' +
+      '<div class="card"><fieldset><legend>Har du någon värk eller smärta efter passet?</legend><div class="grid g2"><label class="pick"><input type="radio" name="ppain" value="no"' + (edit && !p.pain ? ' checked' : '') + '><span>Nej</span></label><label class="pick"><input type="radio" name="ppain" value="yes"' + (p.pain ? ' checked' : '') + '><span>Ja</span></label></div>' +
+      '<div id="ppw" ' + (p.pain ? '' : 'hidden ') + 'style="margin-top:10px"><label class="f" for="ppl">Var och hur illa?</label><input type="text" id="ppl" maxlength="200" value="' + esc(p.pain_location || '') + '"></div></fieldset></div>' +
+      '<div class="card"><label class="f" for="pdid">Vad gjorde du?</label><span class="hint" style="margin-bottom:6px">Till exempel: knäböj 5x5 och marklyft, eller 5 ronder sparring, eller löpning 6 km. Skriv fritt.</span><textarea id="pdid" maxlength="1500">' + esc(p.did || '') + '</textarea></div>' +
+      '<div class="card"><label class="f" for="pfelt">Hur kändes det?</label><span class="hint" style="margin-bottom:6px">Vad funkade, vad var svårt, vad vill du jobba på. Skriv fritt.</span><textarea id="pfelt" maxlength="1500">' + esc(p.felt || '') + '</textarea></div>' +
+      '<p id="perr" hidden role="alert"></p><div class="stack"><button class="btn" type="submit">' + (edit ? 'Spara ändringar' : 'Spara pass') + '</button><button class="btn sec" type="button" id="pcancel">Avbryt</button></div></form>');
+    var f = $('pform');
+    f.addEventListener('change', function (e) { if (e.target && e.target.name === 'ppain') $('ppw').hidden = e.target.value !== 'yes'; if (e.target && e.target.name === 'pmin') $('pmc').value = ''; });
+    $('pmc').addEventListener('input', function () { Array.prototype.forEach.call(document.querySelectorAll('input[name=pmin]'), function (r) { r.checked = false; }); });
+    $('pcancel').onclick = function () { render(); };
+    f.onsubmit = function (e) {
+      e.preventDefault();
+      var er = $('perr'), sel = [];
+      Array.prototype.forEach.call(document.querySelectorAll('input[name=ptype]:checked'), function (c) { sel.push(c.value); });
+      var rpe = val('prpe'), pain = val('ppain'), m = numv('pmc'); if (m == null) { var cm = val('pmin'); m = cm ? +cm : null; }
+      if (!sel.length) { say(er, 'Välj minst en passtyp.'); return; }
+      if (!rpe) { say(er, 'Ange hur tungt passet var.'); return; }
+      if (!m || m < 1 || m > 600) { say(er, 'Ange hur länge passet var.'); return; }
+      if (!pain) { say(er, 'Svara om du har någon värk.'); return; }
+      var btn = f.querySelector('button[type=submit]'); btn.disabled = true;
+      rpc('fp5_submit_pass', { p_token: token, p_id: edit ? p.id : null, p_date: $('pdate').value, p_types: sel, p_rpe: +rpe, p_minutes: Math.round(m), p_pain: pain === 'yes', p_pain_location: pain === 'yes' ? $('ppl').value : null, p_did: $('pdid').value, p_felt: $('pfelt').value })
+        .then(function (r) { if (!r || !r.ok) { btn.disabled = false; say(er, errMsg(r)); return; } tab = 'today'; return load(); })
+        .catch(function () { btn.disabled = false; say(er, 'Det gick inte att spara. Försök igen.'); });
+    };
+  }
+
+  /* ---------- MINA PASS ---------- */
+  function renderMine() {
+    var h = '<div class="card"><h2>Mina pass, senaste 4 veckorna</h2>' + (ctx.passes.length ? ctx.passes.map(passItem).join('') : '<p class="sub" style="margin:0">Inga pass än.</p>') + '<p class="hint" style="margin-top:10px">Du kan ändra pass som är högst 14 dagar gamla.</p></div>' +
+      '<div class="card"><h2>Morgonkoll</h2>' + (ctx.daily.length ? ctx.daily.map(function (d) {
+        return '<div style="border-top:1px solid var(--border);padding:8px 0"><b>' + esc(d.day) + '</b><div class="sub" style="margin:2px 0 0">Sömn ' + esc(d.sleep) + '/5' + (d.sleep_hours != null ? ' (' + esc(d.sleep_hours) + ' h)' : '') + ' · Energi ' + esc(d.energy) + '/5 · Ömhet ' + esc(d.soreness) + '/5 · Stress ' + esc(d.stress) + '/5' + (d.weight_kg != null ? ' · ' + esc(d.weight_kg) + ' kg' : '') + (d.pain ? ' · Värk: ' + esc(d.pain_location || 'ja') : '') + '</div></div>'; }).join('') : '<p class="sub" style="margin:0">Ingen morgonkoll än.</p>') + '</div>';
+    shell(h); bindPassItems();
+  }
+
+  /* ---------- ANALYS ---------- */
+  function wfetch(mode) {
+    return post('/functions/v1/fighter_weekly', { token: token, mode: mode }).catch(function (e) { throw e; });
+  }
+  function renderWeek() {
+    shell('<div class="card" id="wk"><p class="sub" style="margin:0">Laddar…</p></div><div class="card"><h2>Tidigare analyser</h2>' + (ctx.analyses.length ? ctx.analyses.map(function (a) { return '<div style="border-top:1px solid var(--border);padding:10px 0"><b>Vecka från ' + esc(a.week_start) + '</b><div class="txt">' + fmt(a.summary) + '</div></div>'; }).join('') : '<p class="sub" style="margin:0">Inga än.</p>') + '</div>');
+    var box = $('wk');
     function draw(j) {
-      if (j.summary) {
-        box.innerHTML = '<h2 style="margin:0 0 8px;font-size:18px">Din veckoanalys</h2><p class="muted" style="margin:0 0 10px">Vecka ' + esc(j.week_start) + ' – ' + esc(j.week_end) + '</p><div>' + fmt(j.summary) + '</div>';
-        return;
-      }
-      box.innerHTML = '<h2 style="margin:0 0 8px;font-size:18px">Din veckoanalys</h2><p class="muted" style="margin:0 0 10px">Få en analys av din vecka (' + esc(j.week_start) + ' – ' + esc(j.week_end) + ') baserat på dina svar. Du kan göra den en gång i veckan.</p>' +
-        '<button class="btn sec" type="button" id="wgo">Skapa min veckoanalys</button><p class="err" id="werr" hidden></p>';
-      document.getElementById('wgo').onclick = function () {
+      if (j.summary) { box.innerHTML = '<h2>Din veckoanalys</h2><p class="sub" style="margin:0 0 10px">' + esc(j.week_start) + ' till ' + esc(j.week_end) + '</p><div class="txt">' + fmt(j.summary) + '</div>'; return; }
+      box.innerHTML = '<h2>Din veckoanalys</h2><p class="sub" style="margin:0 0 12px">Få en analys av din vecka (' + esc(j.week_start) + ' till ' + esc(j.week_end) + '). Den bygger på det du fyllt i. Du kan göra en per vecka, från söndag kl 20.</p><button class="btn" type="button" id="wgo">Skapa min veckoanalys</button><p class="err" id="werr" hidden></p>';
+      $('wgo').onclick = function () {
         var b = this; b.disabled = true; b.textContent = 'Skriver…';
-        wfetch('make').then(draw).catch(function (e) {
+        wfetch('make').then(function (r) { draw(r); return rpc('fp5_context', { p_token: token }).then(function (c) { if (c && c.ok) ctx = c; }); }).catch(function (e) {
           b.disabled = false; b.textContent = 'Skapa min veckoanalys';
-          var w = document.getElementById('werr'); w.hidden = false;
-          w.textContent = e.code === 'ingen_data' ? 'Du har inga incheckningar den här veckan än.' : 'Det gick inte nu. Försök igen om en stund.';
+          say($('werr'), e.code === 'ingen_data' ? 'Du har inga pass den här veckan än.' : 'Det gick inte nu. Försök igen om en stund.');
         });
       };
     }
-    wfetch('get').then(draw).catch(function () { box.hidden = true; });
+    wfetch('get').then(draw).catch(function () { box.innerHTML = '<p class="sub" style="margin:0">Veckoanalysen är inte tillgänglig just nu.</p>'; });
   }
 
-  function showInvalid() {
-    app.innerHTML = '<h1>Länken fungerar inte</h1>' +
-      '<p class="sub">Den här länken är ogiltig eller avstängd. Be din tränare om en ny länk.</p>';
-  }
-
-  function showForm() {
-    var today = new Date();
-    var min = new Date(); min.setDate(min.getDate() - 14);
-    var last = store('fp2_last_type') || '';
-    var typeHtml = TYPES.map(function (t) {
-      return '<label class="pick"><input type="radio" name="type" value="' + t[0] + '"' + (t[0] === last ? ' checked' : '') +
-        '><span>' + t[1] + '</span></label>';
-    }).join('');
-
-    app.innerHTML =
-      '<div id="done" class="card center" hidden>' +
-        '<p class="big" aria-hidden="true">✓</p>' +
-        '<h1 id="doneTitle">Tack!</h1>' +
-        '<p class="sub" id="doneText">Ditt svar är sparat.</p>' +
-        '<div class="stack">' +
-          '<button class="btn sec" type="button" id="again">Fyll i ett annat pass</button>' +
-          '<button class="btn sec" type="button" id="edit">Ändra mitt svar</button>' +
-        '</div>' +
-      '</div>' +
-      '<form id="form" novalidate>' +
-        '<h1>Hej ' + esc(ctx.name || '') + '!</h1>' +
-        '<p class="sub">Några snabba frågor om passet. Det tar under en minut.</p>' +
-        '<div class="card"><fieldset><legend>Vilket pass?</legend><div class="grid g2">' + typeHtml + '</div></fieldset></div>' +
-        '<div class="card"><label class="f" for="date">Datum</label>' +
-          '<input type="date" id="date" name="date" value="' + ymd(today) + '" min="' + ymd(min) + '" max="' + ymd(today) + '"></div>' +
-        '<div class="card"><fieldset><legend>Hur tungt var passet?<span class="hint">1 = mycket lätt, 10 = maximalt</span></legend>' +
-          scale('rpe', 1, 10, 'g5') + '</fieldset></div>' +
-        '<div class="card"><fieldset><legend>Hur mycket energi hade du?</legend>' + scale('energy', 1, 5, 'g5') +
-          '<div class="ends"><span>Slut</span><span>Full av energi</span></div></fieldset></div>' +
-        '<div class="card"><fieldset><legend>Hur sov du natten innan?</legend>' + scale('sleep', 1, 5, 'g5') +
-          '<div class="ends"><span>Dåligt</span><span>Bra</span></div></fieldset></div>' +
-        '<div class="card"><fieldset><legend>Hur är humöret?</legend>' + scale('mood', 1, 5, 'g5') +
-          '<div class="ends"><span>Dåligt</span><span>Bra</span></div></fieldset></div>' +
-        '<div class="card"><fieldset><legend>Har du någon värk eller smärta?</legend>' +
-          '<div class="grid g2">' +
-            '<label class="pick"><input type="radio" name="pain" value="no"><span>Nej</span></label>' +
-            '<label class="pick"><input type="radio" name="pain" value="yes"><span>Ja</span></label>' +
-          '</div>' +
-          '<div id="painWrap" hidden style="margin-top:10px"><label class="f" for="painLoc">Var?</label>' +
-            '<input type="text" id="painLoc" name="painLoc" maxlength="200" placeholder="t.ex. vänster knä"></div>' +
-        '</fieldset></div>' +
-        '<div class="card"><label class="f" for="went">Vad funkade bra?</label>' +
-          '<textarea id="went" name="went" maxlength="1000"></textarea></div>' +
-        '<div class="card"><label class="f" for="work">Vad vill du jobba på?</label>' +
-          '<textarea id="work" name="work" maxlength="1000"></textarea></div>' +
-        '<p class="err" id="err" role="alert" hidden></p>' +
-        '<button class="btn" type="submit" id="send">Skicka</button>' +
-      '</form><div class="card" id="wk"></div>';
-
-    var form = document.getElementById('form');
-    weekly();
-    form.addEventListener('change', function (e) {
-      if (e.target && e.target.name === 'pain') {
-        document.getElementById('painWrap').hidden = e.target.value !== 'yes';
-      }
-    });
-    form.addEventListener('submit', function (e) { e.preventDefault(); submit(form); });
-    document.getElementById('again').addEventListener('click', function () { resetForm(form); showFormOnly(); });
-    document.getElementById('edit').addEventListener('click', showFormOnly);
-  }
-
-  function showFormOnly() {
-    document.getElementById('done').hidden = true;
-    document.getElementById('form').hidden = false;
-    window.scrollTo(0, 0);
-  }
-
-  function resetForm(form) {
-    form.reset();
-    var d = document.getElementById('date');
-    d.value = ymd(new Date());
-    document.getElementById('painWrap').hidden = true;
-    var last = store('fp2_last_type');
-    if (last) { var r = form.querySelector('input[name=type][value="' + last + '"]'); if (r) r.checked = true; }
-  }
-
-  function val(form, name) {
-    var el = form.querySelector('input[name="' + name + '"]:checked');
-    return el ? el.value : null;
-  }
-
-  function submit(form) {
-    var err = document.getElementById('err');
-    var type = val(form, 'type'), rpe = val(form, 'rpe'), energy = val(form, 'energy'),
-        sleep = val(form, 'sleep'), mood = val(form, 'mood'), pain = val(form, 'pain'),
-        date = document.getElementById('date').value;
-    var missing = [];
-    if (!type) missing.push('pass');
-    if (!date) missing.push('datum');
-    if (!rpe) missing.push('hur tungt');
-    if (!energy) missing.push('energi');
-    if (!sleep) missing.push('sömn');
-    if (!mood) missing.push('humör');
-    if (!pain) missing.push('värk (ja eller nej)');
-    if (missing.length) {
-      err.textContent = 'Fyll i: ' + missing.join(', ') + '.';
-      err.hidden = false;
-      return;
-    }
-    err.hidden = true;
-    var btn = document.getElementById('send');
-    btn.disabled = true; btn.textContent = 'Skickar…';
-
-    rpc('fp2_submit_checkin', {
-      p_token: token,
-      p_date: date,
-      p_type: type,
-      p_rpe: parseInt(rpe, 10),
-      p_energy: parseInt(energy, 10),
-      p_sleep: parseInt(sleep, 10),
-      p_mood: parseInt(mood, 10),
-      p_pain: pain === 'yes',
-      p_pain_location: document.getElementById('painLoc').value,
-      p_went_well: document.getElementById('went').value,
-      p_work_on: document.getElementById('work').value
-    }).then(function (res) {
-      btn.disabled = false; btn.textContent = 'Skicka';
-      if (!res || !res.ok) {
-        err.textContent = ERRORS[res && res.error] || 'Det gick inte att spara. Försök igen.';
-        err.hidden = false;
-        return;
-      }
-      store('fp2_last_type', type);
-      var n = (ctx.checkins_28d || 0) + (res.updated ? 0 : 1);
-      if (!res.updated) { ctx.checkins_28d = n; }
-      document.getElementById('doneTitle').textContent = res.updated ? 'Uppdaterat!' : 'Tack, ' + (ctx.name || '') + '!';
-      document.getElementById('doneText').textContent = 'Ditt svar är sparat. Du har checkat in ' + n + (n === 1 ? ' gång' : ' gånger') + ' de senaste 28 dagarna.';
-      document.getElementById('form').hidden = true;
-      document.getElementById('done').hidden = false;
-      window.scrollTo(0, 0);
-    }).catch(function () {
-      btn.disabled = false; btn.textContent = 'Skicka';
-      err.textContent = 'Ingen kontakt med servern. Kontrollera uppkopplingen och försök igen. Dina svar finns kvar.';
-      err.hidden = false;
-    });
-  }
-
-  if (!token || token.length < 40) { showInvalid(); return; }
-  rpc('fp2_checkin_context', { p_token: token }).then(function (c) {
-    if (!c || !c.ok) { showInvalid(); return; }
-    ctx = c;
-    showForm();
-  }).catch(function () {
-    app.innerHTML = '<h1>Ingen kontakt</h1><p class="sub">Det gick inte att nå servern. Kontrollera uppkopplingen och ladda om sidan.</p>';
-  });
-})();
+  if (!token) { showInvalid(); } else { load(); }
+}());
 </script>
 </body>
 </html>

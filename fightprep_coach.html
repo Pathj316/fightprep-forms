@@ -126,7 +126,17 @@ function teamCard(){
       api('/functions/v1/coach_team_analysis',{from:from,to:to,label:lab}).then(function(){teamCard()}).catch(function(er){b.disabled=false;b.textContent='Analysera laget';fail($('tmsg'),new Error(er.message==='ingen_data'?'Inget inlagt under den perioden.':er.message))})};
   }).catch(function(er){fail(box,er)});
 }
-var FF=[['name','Namn'],['weight_class','Viktklass'],['stance','Stance'],['height_cm','Längd (cm)','n'],['reach_cm','Räckvidd (cm)','n'],['primary_style','Stil'],['injury_status','Skadestatus'],['current_training_focus','Träningsfokus','t']];
+var WC=[['flyweight','Flugvikt'],['bantamweight','Bantamvikt'],['featherweight','Fjädervikt'],['lightweight','Lättvikt'],['welterweight','Weltervikt'],['middleweight','Mellanvikt'],['light_heavyweight','Lätt tungvikt'],['heavyweight','Tungvikt'],['womens_strawweight','Dam: Stråvikt'],['womens_flyweight','Dam: Flugvikt'],['womens_bantamweight','Dam: Bantamvikt']];
+var STANCES=[['orthodox','Orthodox'],['southpaw','Southpaw'],['switch','Växlar (switch)']];
+var STYLES=[['Allround','Allround'],['Brottare','Brottare'],['Grappler','Grappler'],['Striker','Striker']];
+var FF=[['name','Namn'],['weight_class','Viktklass','s',WC],['stance','Stance','s',STANCES],['height_cm','Längd (cm)','n'],['reach_cm','Räckvidd (cm)','n'],['primary_style','Stil','s',STYLES],['injury_status','Skadestatus'],['current_training_focus','Träningsfokus','t']];
+function selField(x,v){
+  var cur=String(v==null?'':v),low=cur.toLowerCase().replace(/ /g,'_'),list=x[3],hit=null;
+  list.forEach(function(o){if(o[0].toLowerCase()===low||o[1].toLowerCase()===cur.toLowerCase())hit=o[0]});
+  var h='<option value="">Välj…</option>'+list.map(function(o){return '<option value="'+esc(o[0])+'"'+(o[0]===hit?' selected':'')+'>'+esc(o[1])+'</option>'}).join('');
+  if(cur&&!hit)h+='<option value="'+esc(cur)+'" selected>'+esc(cur)+' (nuvarande)</option>';
+  return '<select id="f_'+x[0]+'">'+h+'</select>';
+}
 function profFields(d){
   return '<h3 style="margin:18px 0 4px">Profil</h3><label>Nivå</label><div class="row"><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="p_amator"'+(d.amator?' checked':'')+'> Amatör</label><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="p_proffs"'+(d.proffs?' checked':'')+'> Proffs</label></div>'+
    '<div id="p_ra"><label for="p_rek_amator">Amatörrekord (V-F-O)</label><input id="p_rek_amator" value="'+esc(d.rek_amator||'')+'"></div><div id="p_rp"><label for="p_rek_proffs">Proffsrekord (V-F-O)</label><input id="p_rek_proffs" value="'+esc(d.rek_proffs||'')+'"></div>'+
@@ -145,7 +155,7 @@ function fighterEdit(f){
   f=f||{};
   if(f.id&&!f._p){app.innerHTML='<p class="muted">Laddar…</p>';rpc('fp3_get_profile',{p_id:f.id}).then(function(d){d=d||{};if(!d.styrkor&&f.general_strengths)d.styrkor=f.general_strengths;if(!d.svagheter&&f.general_weaknesses)d.svagheter=f.general_weaknesses;f._p=d;fighterEdit(f)}).catch(function(er){fail(app,er)});return}
   var d=f._p||{};
-  app.innerHTML='<div class="card"><h2>'+(f.id?'Redigera':'Ny')+' fighter</h2><form id="ff">'+FF.map(function(x){var v=f[x[0]]==null?'':f[x[0]];return '<label for="f_'+x[0]+'">'+x[1]+'</label>'+(x[2]==='t'?'<textarea id="f_'+x[0]+'">'+esc(v)+'</textarea>':'<input id="f_'+x[0]+'" '+(x[2]==='n'?'type="number" step="any" inputmode="decimal"':'')+' value="'+esc(v)+'">')}).join('')+profFields(d)+'<p id="m" class="small"></p><div class="row" style="margin-top:10px"><button class="btn">Spara</button><button type="button" class="btn sec" id="c">Avbryt</button></div></form></div>';
+  app.innerHTML='<div class="card"><h2>'+(f.id?'Redigera':'Ny')+' fighter</h2><form id="ff">'+FF.map(function(x){var v=f[x[0]]==null?'':f[x[0]];return '<label for="f_'+x[0]+'">'+x[1]+'</label>'+(x[2]==='s'?selField(x,v):x[2]==='t'?'<textarea id="f_'+x[0]+'">'+esc(v)+'</textarea>':'<input id="f_'+x[0]+'" '+(x[2]==='n'?'type="number" step="any" inputmode="decimal"':'')+' value="'+esc(v)+'">')}).join('')+profFields(d)+'<p id="m" class="small"></p><div class="row" style="margin-top:10px"><button class="btn">Spara</button><button type="button" class="btn sec" id="c">Avbryt</button></div></form></div>';
   profBind();
   $('c').onclick=function(){render()};
   $('ff').onsubmit=function(e){e.preventDefault();var g=function(k){return $('f_'+k).value};if(!nz(g('name'))){fail($('m'),new Error('Namn saknas'));return}
