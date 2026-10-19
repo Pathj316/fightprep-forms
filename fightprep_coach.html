@@ -116,6 +116,31 @@ function fighterEdit(f){
   $('ff').onsubmit=function(e){e.preventDefault();var g=function(k){return $('f_'+k).value};if(!nz(g('name'))){fail($('m'),new Error('Namn saknas'));return}
     rpc('fp3_upsert_fighter',{p_id:f.id||null,p_name:g('name').trim(),p_weight_class:nz(g('weight_class')),p_stance:nz(g('stance')),p_height_cm:num(g('height_cm')),p_reach_cm:num(g('reach_cm')),p_fight_record:nz(g('fight_record')),p_primary_style:nz(g('primary_style')),p_injury_status:nz(g('injury_status')),p_current_training_focus:nz(g('current_training_focus')),p_general_strengths:nz(g('general_strengths')),p_general_weaknesses:nz(g('general_weaknesses'))}).then(function(r){S.view=r.id;render()}).catch(function(er){fail($('m'),er)})};
 }
+var PF=[['bakgrund','Bakgrund (var kommer fightern ifrån, hur började den?)','t'],['tranat_totalt','Hur länge har fightern tränat totalt?'],['tranat_mma','Hur länge har fightern tränat MMA?'],['andra_sporter','Andra kampsporter / tidigare sporter','t'],['pass_vecka','Pass per vecka just nu'],['hos_mig_sedan','Tränat hos mig sedan'],['tavlingsbakgrund','Tävlingsbakgrund','t'],['senaste_match','Senaste match (datum, motståndare, resultat)','t'],['nasta_match','Nästa match (datum, motståndare, viktklass)','t'],['styrkor','Styrkor','t'],['svagheter','Svagheter','t'],['mentalt','Mentalt (press, matchdag, motgång)','t'],['gamla_skador','Gamla skador','t'],['skonas','Ska skonas','t'],['fokus','Träningsfokus nu','t'],['mal','Mål det här halvåret','t'],['ovrigt','Övrigt','t']];
+function profileCard(id){
+  var box=$('pf');if(!box)return;
+  rpc('fp3_get_profile',{p_id:id}).then(function(d){d=d||{};
+    var rows=PF.filter(function(x){return d[x[0]]}).map(function(x){return '<p><b>'+esc(x[1].replace(/ \(.*\)$/,''))+':</b> '+esc(d[x[0]])+'</p>'}).join('');
+    var lv=[d.amator?'Amatör':'',d.proffs?'Proffs':''].filter(Boolean).join(' + ');
+    var rec=(d.amator&&d.rek_amator?'<p><b>Amatörrekord:</b> '+esc(d.rek_amator)+'</p>':'')+(d.proffs&&d.rek_proffs?'<p><b>Proffsrekord:</b> '+esc(d.rek_proffs)+'</p>':'');
+    box.innerHTML='<div class="row" style="justify-content:space-between"><h3 style="margin:0">Profil</h3><button class="btn sec sm" id="pe">Skriv / ändra</button></div>'+(lv?'<p><span class="pill">'+lv+'</span></p>':'')+rec+(rows||(lv?'':'<p class="muted small">Ingen profil ifylld än.</p>'));
+    $('pe').onclick=function(){profileEdit(id,d)};
+  }).catch(function(er){fail(box,er)});
+}
+function profileEdit(id,d){
+  var box=$('pf');
+  box.innerHTML='<h3 style="margin-top:0">Profil</h3><form id="pform"><label>Nivå</label><div class="row"><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="p_amator"'+(d.amator?' checked':'')+'> Amatör</label><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="p_proffs"'+(d.proffs?' checked':'')+'> Proffs</label></div>'+
+   '<div id="p_ra"><label for="p_rek_amator">Amatörrekord (V-F-O)</label><input id="p_rek_amator" value="'+esc(d.rek_amator||'')+'"></div><div id="p_rp"><label for="p_rek_proffs">Proffsrekord (V-F-O)</label><input id="p_rek_proffs" value="'+esc(d.rek_proffs||'')+'"></div>'+
+   PF.map(function(x){var v=d[x[0]]||'';return '<label for="p_'+x[0]+'">'+x[1]+'</label>'+(x[2]==='t'?'<textarea id="p_'+x[0]+'">'+esc(v)+'</textarea>':'<input id="p_'+x[0]+'" value="'+esc(v)+'">')}).join('')+
+   '<p id="pm" class="small"></p><div class="row" style="margin-top:10px"><button class="btn">Spara profil</button><button type="button" class="btn sec" id="pc">Avbryt</button></div></form>';
+  function vis(){$('p_ra').style.display=$('p_amator').checked?'':'none';$('p_rp').style.display=$('p_proffs').checked?'':'none'}
+  $('p_amator').onchange=vis;$('p_proffs').onchange=vis;vis();
+  $('pc').onclick=function(){profileCard(id)};
+  $('pform').onsubmit=function(e){e.preventDefault();
+    var o={amator:$('p_amator').checked,proffs:$('p_proffs').checked,rek_amator:$('p_rek_amator').value.trim(),rek_proffs:$('p_rek_proffs').value.trim()};
+    PF.forEach(function(x){var v=$('p_'+x[0]).value.trim();if(v)o[x[0]]=v});
+    rpc('fp3_set_profile',{p_id:id,p_data:o}).then(function(){profileCard(id)}).catch(function(er){fail($('pm'),er)})};
+}
 function fighterView(id){
   app.innerHTML='<p class="muted">Laddar…</p>';
   rpc('fp3_get_fighter',{p_id:id}).then(function(d){
@@ -125,13 +150,14 @@ function fighterView(id){
      (f.injury_status?'<p><span class="pill">Skada: '+esc(f.injury_status)+'</span></p>':'')+
      (f.current_training_focus?'<p><b>Fokus:</b> '+esc(f.current_training_focus)+'</p>':'')+
      (f.general_strengths?'<p><b>Styrkor:</b> '+esc(f.general_strengths)+'</p>':'')+(f.general_weaknesses?'<p><b>Svagheter:</b> '+esc(f.general_weaknesses)+'</p>':'')+'</div>'+
+     '<div class="card" id="pf"><p class="muted small">Laddar profil…</p></div>'+
      '<div class="card"><h3 style="margin-top:0">Anteckningar</h3><div id="nl">'+(notes.map(function(n){return '<div class="note"><q>'+esc(CN[n.category]||n.category)+(n.match_label?' · '+esc(n.match_label):'')+'</q>'+esc(n.note)+' <button class="btn sec sm" data-rm="'+esc(n.id)+'">Ta bort</button></div>'}).join('')||'<p class="muted small">Inga.</p>')+'</div>'+
      '<label>Kategori</label><select id="nc">'+opts(CATS,'striking')+'</select><label>Match (valfritt)</label><input id="nm"><label>Anteckning</label><textarea id="nt"></textarea><p id="m1" class="small"></p><button class="btn" id="na">Lägg till</button></div>'+
      '<div class="card"><h3 style="margin-top:0">Incheckningslänk</h3><p class="small muted">Personlig länk fightern använder efter varje pass. Visas bara en gång.</p><label>Adress till fighter_checkin.html</label><input id="lb" type="url" value="'+esc(ls('fp3_base')||'')+'"><p id="lo" class="small"></p><div class="row"><button class="btn sm" id="lc">Skapa ny länk</button><button class="btn sec sm" id="lr">Stäng av länk</button><button class="btn sec sm" id="ls">Sammanställning</button></div></div>'+
      '<div class="card"><h3 style="margin-top:0">Arketyper</h3>'+(sc.map(function(s){return '<span class="pill">'+esc(s.archetype_name)+' '+esc(s.score)+'</span>'}).join('')||'<p class="muted small">Inga poäng.</p>')+
      '<div class="g2"><div><label>Arketyp</label><select id="ar">'+opts(S.archetypes.map(function(a){return[a.slug,a.name]}),'')+'</select></div><div><label>Poäng</label><input id="as" type="number" step="any" inputmode="decimal"></div></div><p id="m2" class="small"></p><button class="btn sec" id="ab">Sätt poäng</button></div>';
     app.innerHTML=h;
-    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};
+    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};profileCard(id);
     $('dl').onclick=function(){if(confirm('Radera '+f.name+' och all kopplad data?'))rpc('fp3_delete_fighter',{p_id:id}).then(function(){S.view=null;render()}).catch(function(er){alert(er.message)})};
     $('na').onclick=function(){var t=nz($('nt').value);if(!t){fail($('m1'),new Error('Skriv något'));return}rpc('fp3_add_fighter_note',{p_fighter_id:id,p_category:$('nc').value,p_note:t,p_match_label:nz($('nm').value)}).then(function(){fighterView(id)}).catch(function(er){fail($('m1'),er)})};
     $('nl').onclick=function(e){var r=e.target.getAttribute('data-rm');if(r)rpc('fp3_delete_fighter_note',{p_id:r}).then(function(){fighterView(id)}).catch(function(er){alert(er.message)})};
