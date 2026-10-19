@@ -102,11 +102,29 @@ function top(btnId,label,fn){return '<button class="btn sec sm" id="'+btnId+'">�
 
 /* ---------- Fighters ---------- */
 function fighterList(){
-  app.innerHTML='<div class="row" style="justify-content:space-between"><h2>Fighters</h2><div class="row"><button class="btn sec sm" id="imp">Hämta från mina profiler</button><button class="btn sm" id="nf">+ Ny</button></div></div><p id="im" class="small"></p><div id="l"><p class="muted">Laddar…</p></div>';
+  app.innerHTML='<div class="row" style="justify-content:space-between"><h2>Fighters</h2><div class="row"><button class="btn sec sm" id="imp">Hämta från mina profiler</button><button class="btn sm" id="nf">+ Ny</button></div></div><p id="im" class="small"></p><div class="card" id="tm"><p class="muted small">Laddar lagsanalys…</p></div><div id="l"><p class="muted">Laddar…</p></div>';
   $('nf').onclick=function(){fighterEdit(null)};
+  teamCard();
   $('imp').onclick=function(){if(!confirm('Skapa fighters från dina klubbprofiler? Fighters du raderat skapas då om. Använd bara första gången.'))return;rpc('fp3_import_profiles').then(function(r){$('im').className='small ok';$('im').textContent=(r&&r.imported||0)+' fighters hämtade och kopplade till dina lager.';fighterList()}).catch(function(er){fail($('im'),er)})};
   rpc('fp3_list_fighters').then(function(a){a=a||[];$('l').innerHTML=a.map(function(f){return '<div class="row" style="flex-wrap:nowrap;margin-bottom:8px"><button class="item" style="margin:0;flex:1" data-id="'+esc(f.id)+'"><b>'+esc(f.name)+'</b> <span class="muted small">'+esc(f.weight_class||'')+'</span>'+(f.injury_status?' <span class="pill">'+esc(f.injury_status)+'</span>':'')+'</button><button class="btn sec sm" data-del="'+esc(f.id)+'" data-nm="'+esc(f.name)+'" aria-label="Radera '+esc(f.name)+'">🗑</button></div>'}).join('')||'<p class="muted">Inga fighters.</p>';
     $('l').onclick=function(e){var d=e.target.closest('[data-del]');if(d){if(confirm('Radera '+d.getAttribute('data-nm')+'? Allt kopplat (incheckningar, anteckningar, länkar, matcher) försvinner. Går inte att ångra.'))rpc('fp3_delete_fighter',{p_id:d.getAttribute('data-del')}).then(fighterList).catch(function(er){alert(er.message)});return}var b=e.target.closest('[data-id]');if(b){S.view=b.getAttribute('data-id');render()}}}).catch(function(er){fail($('l'),er)});
+}
+function teamCard(){
+  var box=$('tm');if(!box)return;
+  rpc('fp3_list_team_analyses').then(function(a){a=a||[];
+    box.innerHTML='<h3 style="margin:0 0 6px">Lagsanalys</h3><p class="small muted">Alla fighters på en gång: belastning, skador, mående, teman och vad som behöver följas upp. Kör när du vill.</p>'+
+     '<label for="tp">Period</label><select id="tp"><option value="7">Senaste 7 dagarna</option><option value="30" selected>Senaste 30 dagarna</option><option value="90">Senaste 3 månaderna</option><option value="365">Senaste året</option><option value="all">Allt som finns</option><option value="custom">Eget intervall…</option></select>'+
+     '<div id="tc" class="g2" hidden><div><label for="tf">Från</label><input id="tf" type="date"></div><div><label for="tt">Till</label><input id="tt" type="date" value="'+today()+'"></div></div>'+
+     '<p id="tmsg" class="small"></p><button class="btn" id="tb">Analysera laget</button><div style="margin-top:12px">'+
+     (a.map(function(x){return '<div class="note"><q>'+esc(x.label||'')+' · '+esc(x.period_from)+' → '+esc(x.period_to)+' · körd '+esc(String(x.created_at).slice(0,10))+'</q>'+mdLite(x.summary)+'</div>'}).join('')||'<p class="muted small">Inga lagsanalyser än.</p>')+'</div>';
+    $('tp').onchange=function(){$('tc').hidden=this.value!=='custom'};
+    $('tb').onclick=function(){var v=$('tp').value,to=today(),from,lab=$('tp').options[$('tp').selectedIndex].text;
+      if(v==='custom'){from=$('tf').value;to=$('tt').value;lab='Eget intervall';if(!from||!to){fail($('tmsg'),new Error('Välj från- och tilldatum'));return}}
+      else if(v==='all'){from='2015-01-01'}
+      else{var d=new Date();d.setDate(d.getDate()-Number(v));from=iso(d)}
+      var b=$('tb');b.disabled=true;b.textContent='Analyserar… (kan ta en minut)';$('tmsg').textContent='';
+      api('/functions/v1/coach_team_analysis',{from:from,to:to,label:lab}).then(function(){teamCard()}).catch(function(er){b.disabled=false;b.textContent='Analysera laget';fail($('tmsg'),new Error(er.message==='ingen_data'?'Inget inlagt under den perioden.':er.message))})};
+  }).catch(function(er){fail(box,er)});
 }
 var FF=[['name','Namn'],['weight_class','Viktklass'],['stance','Stance'],['height_cm','Längd (cm)','n'],['reach_cm','Räckvidd (cm)','n'],['fight_record','Rekord'],['primary_style','Stil'],['injury_status','Skadestatus'],['current_training_focus','Träningsfokus','t'],['general_strengths','Generella styrkor','t'],['general_weaknesses','Generella svagheter','t']];
 function fighterEdit(f){
