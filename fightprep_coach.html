@@ -77,7 +77,8 @@ $('logout').onclick=function(){logout()};
 
 function login(msg){
   tabs.hidden=true;
-  app.innerHTML='<div class="card" style="max-width:380px;margin:28px auto"><h2>Logga in</h2><form id="lf"><label for="em">E-post</label><input id="em" type="email" autocomplete="username" required><label for="pw">Lösenord</label><input id="pw" type="password" autocomplete="current-password" required><p class="err" id="le" role="alert">'+esc(msg||'')+'</p><button class="btn" style="width:100%">Logga in</button></form></div>';
+  app.innerHTML='<div class="card" style="max-width:380px;margin:28px auto"><h2>Logga in</h2><form id="lf"><label for="em">E-post</label><input id="em" type="email" autocomplete="username" required><label for="pw">Lösenord</label><input id="pw" type="password" autocomplete="current-password" required><p class="err" id="le" role="alert">'+esc(msg||'')+'</p><button class="btn" style="width:100%">Logga in</button></form><p class="small" style="margin-top:14px"><a href="#" id="fg">Första gången / glömt lösenord</a></p></div>';
+  $('fg').onclick=function(e){e.preventDefault();recoverForm()};
   $('lf').onsubmit=function(e){e.preventDefault();$('le').textContent='';authCall('token?grant_type=password',{email:$('em').value.trim(),password:$('pw').value}).then(function(j){setSession(j);return boot()}).catch(function(er){$('le').textContent=er.message})};
 }
 function boot(){
@@ -283,8 +284,26 @@ function loadSum(){
   }).catch(function(er){fail(o,er)});
 }
 
+function recoverForm(){
+  app.innerHTML='<div class="card" style="max-width:380px;margin:28px auto"><h2>Sätt lösenord</h2><p class="small muted">Vi skickar en länk till din e-post. Öppna den på den här enheten.</p><label for="re">E-post</label><input id="re" type="email" autocomplete="username"><p id="rm" class="small"></p><button class="btn" id="rb" style="width:100%">Skicka länk</button><p class="small" style="margin-top:12px"><a href="#" id="rk">Tillbaka</a></p></div>';
+  $('rk').onclick=function(e){e.preventDefault();login()};
+  $('rb').onclick=function(){var em=$('re').value.trim();if(!em){fail($('rm'),new Error('Skriv e-post'));return}
+    var back=location.origin+location.pathname;
+    fetch(URL_+'/auth/v1/recover?redirect_to='+encodeURIComponent(back),{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({email:em})}).then(function(r){$('rm').className='small ok';$('rm').textContent='Om kontot finns har en länk skickats. Kolla din e-post.'}).catch(function(er){fail($('rm'),er)})};
+}
+function setPasswordForm(tok){
+  tabs.hidden=true;
+  app.innerHTML='<div class="card" style="max-width:380px;margin:28px auto"><h2>Välj nytt lösenord</h2><form id="sp"><label for="p1">Nytt lösenord (minst 8 tecken)</label><input id="p1" type="password" autocomplete="new-password" minlength="8" required><label for="p2">Upprepa</label><input id="p2" type="password" autocomplete="new-password" required><p id="pm" class="small"></p><button class="btn" style="width:100%">Spara lösenord</button></form></div>';
+  $('sp').onsubmit=function(e){e.preventDefault();if($('p1').value!==$('p2').value){fail($('pm'),new Error('Lösenorden är olika'));return}if($('p1').value.length<8){fail($('pm'),new Error('Minst 8 tecken'));return}
+    fetch(URL_+'/auth/v1/user',{method:'PUT',headers:{apikey:KEY,Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({password:$('p1').value})}).then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok)throw new Error(j.msg||j.error_description||j.message||'Kunde inte spara');
+      history.replaceState(null,'',location.pathname);$('pm').className='small ok';$('pm').textContent='Sparat. Du kan nu logga in.';setTimeout(function(){login()},1200)})}).catch(function(er){fail($('pm'),er)})};
+}
+
 var rt=ls('fp3_rt');
-if(rt){S.refresh=rt;boot().catch(function(){login()})}else login();
+var hm=location.hash.match(/access_token=([^&]+)/),ht=/type=recovery/.test(location.hash);
+if(hm&&ht){setPasswordForm(decodeURIComponent(hm[1]))}
+else if(/error_description=/.test(location.hash)){login('Länken är ogiltig eller har gått ut. Begär en ny.')}
+else if(rt){S.refresh=rt;boot().catch(function(){login()})}else login();
 })();
 </script>
 </body>
