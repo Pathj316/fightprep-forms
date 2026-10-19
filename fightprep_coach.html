@@ -150,6 +150,24 @@ function weeklyCard(id){
       api('/functions/v1/coach_weekly',{fighter_id:id}).then(function(){weeklyCard(id)}).catch(function(er){b.disabled=false;b.textContent='Sammanfatta veckan';fail($('wm'),new Error(er.message==='ingen_data'?'Inga incheckningar eller anteckningar förra veckan.':er.message))})};
   }).catch(function(er){fail(box,er)});
 }
+function iso(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function analysisCard(id){
+  var box=$('an');if(!box)return;
+  rpc('fp3_list_analyses',{p_fighter_id:id}).then(function(a){a=a||[];
+    box.innerHTML='<h3 style="margin:0 0 6px">Fördjupad analys</h3><p class="small muted">Allt som finns inlagt för fightern under vald period: incheckningar, anteckningar, profil, matcher och lager. Kör när du vill.</p>'+
+     '<label for="ap">Period</label><select id="ap"><option value="30">Senaste 30 dagarna</option><option value="90">Senaste 3 månaderna</option><option value="180">Senaste 6 månaderna</option><option value="365">Senaste året</option><option value="all">Allt som finns</option><option value="custom">Eget intervall…</option></select>'+
+     '<div id="ac" class="g2" hidden><div><label for="af">Från</label><input id="af" type="date"></div><div><label for="at">Till</label><input id="at" type="date" value="'+today()+'"></div></div>'+
+     '<p id="am" class="small"></p><button class="btn" id="ab2">Analysera</button><div id="al" style="margin-top:12px">'+
+     (a.map(function(x){return '<div class="note"><q>'+esc(x.label||'')+' · '+esc(x.period_from)+' → '+esc(x.period_to)+' · körd '+esc(String(x.created_at).slice(0,10))+'</q>'+mdLite(x.summary)+'</div>'}).join('')||'<p class="muted small">Inga analyser än.</p>')+'</div>';
+    $('ap').onchange=function(){$('ac').hidden=this.value!=='custom'};
+    $('ab2').onclick=function(){var v=$('ap').value,to=today(),from,lab=$('ap').options[$('ap').selectedIndex].text;
+      if(v==='custom'){from=$('af').value;to=$('at').value;lab='Eget intervall';if(!from||!to){fail($('am'),new Error('Välj från- och tilldatum'));return}}
+      else if(v==='all'){from='2015-01-01'}
+      else{var d=new Date();d.setDate(d.getDate()-Number(v));from=iso(d)}
+      var b=$('ab2');b.disabled=true;b.textContent='Analyserar… (kan ta en minut)';$('am').textContent='';
+      api('/functions/v1/coach_analysis',{fighter_id:id,from:from,to:to,label:lab}).then(function(){analysisCard(id)}).catch(function(er){b.disabled=false;b.textContent='Analysera';fail($('am'),new Error(er.message==='ingen_data'?'Inget inlagt under den perioden.':er.message))})};
+  }).catch(function(er){fail(box,er)});
+}
 function fighterView(id){
   app.innerHTML='<p class="muted">Laddar…</p>';
   rpc('fp3_get_fighter',{p_id:id}).then(function(d){
@@ -159,6 +177,7 @@ function fighterView(id){
      (f.injury_status?'<p><span class="pill">Skada: '+esc(f.injury_status)+'</span></p>':'')+
      (f.current_training_focus?'<p><b>Fokus:</b> '+esc(f.current_training_focus)+'</p>':'')+
      (f.general_strengths?'<p><b>Styrkor:</b> '+esc(f.general_strengths)+'</p>':'')+(f.general_weaknesses?'<p><b>Svagheter:</b> '+esc(f.general_weaknesses)+'</p>':'')+'</div>'+
+     '<div class="card" id="an"><p class="muted small">Laddar analys…</p></div>'+
      '<div class="card" id="wk"><p class="muted small">Laddar veckosammanfattning…</p></div>'+
      '<div class="card" id="pf"><p class="muted small">Laddar profil…</p></div>'+
      '<div class="card"><h3 style="margin-top:0">Anteckningar</h3><div id="nl">'+(notes.map(function(n){return '<div class="note"><q>'+esc(CN[n.category]||n.category)+(n.match_label?' · '+esc(n.match_label):'')+'</q>'+esc(n.note)+' <button class="btn sec sm" data-rm="'+esc(n.id)+'">Ta bort</button></div>'}).join('')||'<p class="muted small">Inga.</p>')+'</div>'+
@@ -167,7 +186,7 @@ function fighterView(id){
      '<div class="card"><h3 style="margin-top:0">Arketyper</h3>'+(sc.map(function(s){return '<span class="pill">'+esc(s.archetype_name)+' '+esc(s.score)+'</span>'}).join('')||'<p class="muted small">Inga poäng.</p>')+
      '<div class="g2"><div><label>Arketyp</label><select id="ar">'+opts(S.archetypes.map(function(a){return[a.slug,a.name]}),'')+'</select></div><div><label>Poäng</label><input id="as" type="number" step="any" inputmode="decimal"></div></div><p id="m2" class="small"></p><button class="btn sec" id="ab">Sätt poäng</button></div>';
     app.innerHTML=h;
-    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};profileCard(id);weeklyCard(id);
+    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};profileCard(id);weeklyCard(id);analysisCard(id);
     $('dl').onclick=function(){if(confirm('Radera '+f.name+' och all kopplad data?'))rpc('fp3_delete_fighter',{p_id:id}).then(function(){S.view=null;render()}).catch(function(er){alert(er.message)})};
     $('na').onclick=function(){var t=nz($('nt').value);if(!t){fail($('m1'),new Error('Skriv något'));return}rpc('fp3_add_fighter_note',{p_fighter_id:id,p_category:$('nc').value,p_note:t,p_match_label:nz($('nm').value)}).then(function(){fighterView(id)}).catch(function(er){fail($('m1'),er)})};
     $('nl').onclick=function(e){var r=e.target.getAttribute('data-rm');if(r)rpc('fp3_delete_fighter_note',{p_id:r}).then(function(){fighterView(id)}).catch(function(er){alert(er.message)})};
