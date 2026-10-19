@@ -129,7 +129,7 @@ function teamCard(){
 var WC=[['flyweight','Flugvikt'],['bantamweight','Bantamvikt'],['featherweight','Fjädervikt'],['lightweight','Lättvikt'],['welterweight','Weltervikt'],['middleweight','Mellanvikt'],['light_heavyweight','Lätt tungvikt'],['heavyweight','Tungvikt'],['womens_strawweight','Dam: Stråvikt'],['womens_flyweight','Dam: Flugvikt'],['womens_bantamweight','Dam: Bantamvikt']];
 var STANCES=[['orthodox','Orthodox'],['southpaw','Southpaw'],['switch','Växlar (switch)']];
 var STYLES=[['Allround','Allround'],['Brottare','Brottare'],['Grappler','Grappler'],['Striker','Striker']];
-var FF=[['name','Namn'],['weight_class','Viktklass','s',WC],['stance','Stance','s',STANCES],['height_cm','Längd (cm)','n'],['reach_cm','Räckvidd (cm)','n'],['primary_style','Stil','s',STYLES],['injury_status','Skadestatus (uppdatera vid behov)']];
+var FF=[['name','Namn'],['weight_class','Viktklass','s',WC],['stance','Stance','s',STANCES],['height_cm','Längd (cm)','n'],['reach_cm','Räckvidd (cm)','n'],['primary_style','Stil','s',STYLES]];
 function selField(x,v){
   var cur=String(v==null?'':v),low=cur.toLowerCase().replace(/ /g,'_'),list=x[3],hit=null;
   list.forEach(function(o){if(o[0].toLowerCase()===low||o[1].toLowerCase()===cur.toLowerCase())hit=o[0]});
@@ -140,7 +140,7 @@ function selField(x,v){
 function profFields(d){
   return '<h3 style="margin:18px 0 4px">Profil</h3><label>Nivå</label><div class="row"><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="p_amator"'+(d.amator?' checked':'')+'> Amatör</label><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="p_proffs"'+(d.proffs?' checked':'')+'> Proffs</label></div>'+
    '<div id="p_ra"><label for="p_rek_amator">Amatörrekord (V-F-O), fyll i även som proffs</label><input id="p_rek_amator" value="'+esc(d.rek_amator||'')+'"></div><div id="p_rp"><label for="p_rek_proffs">Proffsrekord (V-F-O)</label><input id="p_rek_proffs" value="'+esc(d.rek_proffs||'')+'"></div>'+
-   PF.map(function(x){var v=d[x[0]]||'';return '<label for="p_'+x[0]+'">'+x[1]+'</label>'+(x[2]==='t'?'<textarea id="p_'+x[0]+'">'+esc(v)+'</textarea>':'<input id="p_'+x[0]+'" value="'+esc(v)+'">')}).join('');
+   PF.map(function(x){var v=d[x[0]]||'';return '<label for="p_'+x[0]+'">'+x[1]+'</label>'+(x[2]==='t'?'<textarea id="p_'+x[0]+'">'+esc(v)+'</textarea>':'<input id="p_'+x[0]+'"'+(x[2]==='d'?' type="date"':'')+' value="'+esc(v)+'">')}).join('');
 }
 function profBind(){
   function vis(){$('p_rp').style.display=$('p_proffs').checked?'':'none'}
@@ -161,10 +161,10 @@ function fighterEdit(f){
   $('ff').onsubmit=function(e){e.preventDefault();var g=function(k){return $('f_'+k).value};if(!nz(g('name'))){fail($('m'),new Error('Namn saknas'));return}
     var pd=profRead();
     var rec=[pd.rek_amator?'Amatör '+pd.rek_amator:'',pd.proffs&&pd.rek_proffs?'Proffs '+pd.rek_proffs:''].filter(Boolean).join(' · ');
-    rpc('fp3_upsert_fighter',{p_id:f.id||null,p_name:g('name').trim(),p_weight_class:nz(g('weight_class')),p_stance:nz(g('stance')),p_height_cm:num(g('height_cm')),p_reach_cm:num(g('reach_cm')),p_fight_record:nz(rec),p_primary_style:nz(g('primary_style')),p_injury_status:nz(g('injury_status')),p_current_training_focus:f.current_training_focus||null,p_general_strengths:nz(pd.styrkor),p_general_weaknesses:nz(pd.svagheter)})
+    rpc('fp3_upsert_fighter',{p_id:f.id||null,p_name:g('name').trim(),p_weight_class:nz(g('weight_class')),p_stance:nz(g('stance')),p_height_cm:num(g('height_cm')),p_reach_cm:num(g('reach_cm')),p_fight_record:nz(rec),p_primary_style:nz(g('primary_style')),p_injury_status:f.injury_status||null,p_current_training_focus:f.current_training_focus||null,p_general_strengths:nz(pd.styrkor),p_general_weaknesses:nz(pd.svagheter)})
      .then(function(r){return rpc('fp3_set_profile',{p_id:r.id,p_data:pd}).then(function(){S.view=r.id;render()})}).catch(function(er){fail($('m'),er)})};
 }
-var PF=[['bakgrund','Bakgrund (var kommer fightern ifrån, hur började den?)','t'],['tranat_totalt','Hur länge har fightern tränat totalt?'],['tranat_mma','Hur länge har fightern tränat MMA?'],['andra_sporter','Andra kampsporter / tidigare sporter','t'],['hos_mig_sedan','Tränat hos mig sedan'],['tavlingsbakgrund','Tävlingsbakgrund','t'],['styrkor','Styrkor','t'],['svagheter','Svagheter','t'],['mentalt','Mentalt (press, matchdag, motgång)','t'],['gamla_skador','Gamla skador','t'],['skonas','Ska skonas (skador eller begränsningar som påverkar träningen, t.ex. knä: inga tunga knäböj)','t'],['mal','Mål det här halvåret','t'],['ovrigt','Övrigt','t']];
+var PF=[['fodd','Födelsedatum','d'],['gym','Gym / klubb'],['borjade_trana','Började träna (år)'],['borjade_mma','Började med MMA (år)'],['hos_mig_sedan','Tränat hos mig sedan (år eller datum)'],['bakgrund','Bakgrund (var kommer fightern ifrån, hur började den?)','t'],['andra_sporter','Andra kampsporter / tidigare sporter','t'],['tavlingsbakgrund','Tävlingsbakgrund','t'],['styrkor','Styrkor','t'],['svagheter','Svagheter','t'],['mentalt','Mentalt (press, matchdag, motgång)','t'],['gamla_skador','Tidigare skador (historik)','t'],['ovrigt','Övrigt','t']];
 function profileCard(id){
   var box=$('pf');if(!box)return;
   rpc('fp3_get_profile',{p_id:id}).then(function(d){d=d||{};
