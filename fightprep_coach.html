@@ -141,6 +141,15 @@ function profileEdit(id,d){
     PF.forEach(function(x){var v=$('p_'+x[0]).value.trim();if(v)o[x[0]]=v});
     rpc('fp3_set_profile',{p_id:id,p_data:o}).then(function(){profileCard(id)}).catch(function(er){fail($('pm'),er)})};
 }
+function mdLite(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>')}
+function weeklyCard(id){
+  var box=$('wk');if(!box)return;
+  rpc('fp3_list_summaries',{p_fighter_id:id}).then(function(a){a=a||[];
+    box.innerHTML='<div class="row" style="justify-content:space-between"><h3 style="margin:0">Veckosammanfattning</h3><button class="btn sm" id="wb">Sammanfatta veckan</button></div><p class="small muted">Tidigast söndag kl 20. En per fighter och vecka. Skriven av AI utifrån incheckningar och dina anteckningar.</p><p id="wm" class="small"></p><div id="wl">'+(a.map(function(x){return '<div class="note"><q>Vecka från '+esc(x.week_start)+'</q>'+mdLite(x.summary)+'</div>'}).join('')||'<p class="muted small">Inga än.</p>')+'</div>';
+    $('wb').onclick=function(){var b=$('wb');b.disabled=true;b.textContent='Skriver…';$('wm').textContent='';
+      api('/functions/v1/coach_weekly',{fighter_id:id}).then(function(){weeklyCard(id)}).catch(function(er){b.disabled=false;b.textContent='Sammanfatta veckan';fail($('wm'),new Error(er.message==='ingen_data'?'Inga incheckningar eller anteckningar förra veckan.':er.message))})};
+  }).catch(function(er){fail(box,er)});
+}
 function fighterView(id){
   app.innerHTML='<p class="muted">Laddar…</p>';
   rpc('fp3_get_fighter',{p_id:id}).then(function(d){
@@ -150,6 +159,7 @@ function fighterView(id){
      (f.injury_status?'<p><span class="pill">Skada: '+esc(f.injury_status)+'</span></p>':'')+
      (f.current_training_focus?'<p><b>Fokus:</b> '+esc(f.current_training_focus)+'</p>':'')+
      (f.general_strengths?'<p><b>Styrkor:</b> '+esc(f.general_strengths)+'</p>':'')+(f.general_weaknesses?'<p><b>Svagheter:</b> '+esc(f.general_weaknesses)+'</p>':'')+'</div>'+
+     '<div class="card" id="wk"><p class="muted small">Laddar veckosammanfattning…</p></div>'+
      '<div class="card" id="pf"><p class="muted small">Laddar profil…</p></div>'+
      '<div class="card"><h3 style="margin-top:0">Anteckningar</h3><div id="nl">'+(notes.map(function(n){return '<div class="note"><q>'+esc(CN[n.category]||n.category)+(n.match_label?' · '+esc(n.match_label):'')+'</q>'+esc(n.note)+' <button class="btn sec sm" data-rm="'+esc(n.id)+'">Ta bort</button></div>'}).join('')||'<p class="muted small">Inga.</p>')+'</div>'+
      '<label>Kategori</label><select id="nc">'+opts(CATS,'striking')+'</select><label>Match (valfritt)</label><input id="nm"><label>Anteckning</label><textarea id="nt"></textarea><p id="m1" class="small"></p><button class="btn" id="na">Lägg till</button></div>'+
@@ -157,7 +167,7 @@ function fighterView(id){
      '<div class="card"><h3 style="margin-top:0">Arketyper</h3>'+(sc.map(function(s){return '<span class="pill">'+esc(s.archetype_name)+' '+esc(s.score)+'</span>'}).join('')||'<p class="muted small">Inga poäng.</p>')+
      '<div class="g2"><div><label>Arketyp</label><select id="ar">'+opts(S.archetypes.map(function(a){return[a.slug,a.name]}),'')+'</select></div><div><label>Poäng</label><input id="as" type="number" step="any" inputmode="decimal"></div></div><p id="m2" class="small"></p><button class="btn sec" id="ab">Sätt poäng</button></div>';
     app.innerHTML=h;
-    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};profileCard(id);
+    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};profileCard(id);weeklyCard(id);
     $('dl').onclick=function(){if(confirm('Radera '+f.name+' och all kopplad data?'))rpc('fp3_delete_fighter',{p_id:id}).then(function(){S.view=null;render()}).catch(function(er){alert(er.message)})};
     $('na').onclick=function(){var t=nz($('nt').value);if(!t){fail($('m1'),new Error('Skriv något'));return}rpc('fp3_add_fighter_note',{p_fighter_id:id,p_category:$('nc').value,p_note:t,p_match_label:nz($('nm').value)}).then(function(){fighterView(id)}).catch(function(er){fail($('m1'),er)})};
     $('nl').onclick=function(e){var r=e.target.getAttribute('data-rm');if(r)rpc('fp3_delete_fighter_note',{p_id:r}).then(function(){fighterView(id)}).catch(function(er){alert(er.message)})};
