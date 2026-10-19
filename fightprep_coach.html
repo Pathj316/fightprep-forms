@@ -126,13 +126,33 @@ function teamCard(){
       api('/functions/v1/coach_team_analysis',{from:from,to:to,label:lab}).then(function(){teamCard()}).catch(function(er){b.disabled=false;b.textContent='Analysera laget';fail($('tmsg'),new Error(er.message==='ingen_data'?'Inget inlagt under den perioden.':er.message))})};
   }).catch(function(er){fail(box,er)});
 }
-var FF=[['name','Namn'],['weight_class','Viktklass'],['stance','Stance'],['height_cm','Längd (cm)','n'],['reach_cm','Räckvidd (cm)','n'],['fight_record','Rekord'],['primary_style','Stil'],['injury_status','Skadestatus'],['current_training_focus','Träningsfokus','t'],['general_strengths','Generella styrkor','t'],['general_weaknesses','Generella svagheter','t']];
+var FF=[['name','Namn'],['weight_class','Viktklass'],['stance','Stance'],['height_cm','Längd (cm)','n'],['reach_cm','Räckvidd (cm)','n'],['primary_style','Stil'],['injury_status','Skadestatus'],['current_training_focus','Träningsfokus','t']];
+function profFields(d){
+  return '<h3 style="margin:18px 0 4px">Profil</h3><label>Nivå</label><div class="row"><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="p_amator"'+(d.amator?' checked':'')+'> Amatör</label><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="p_proffs"'+(d.proffs?' checked':'')+'> Proffs</label></div>'+
+   '<div id="p_ra"><label for="p_rek_amator">Amatörrekord (V-F-O)</label><input id="p_rek_amator" value="'+esc(d.rek_amator||'')+'"></div><div id="p_rp"><label for="p_rek_proffs">Proffsrekord (V-F-O)</label><input id="p_rek_proffs" value="'+esc(d.rek_proffs||'')+'"></div>'+
+   PF.map(function(x){var v=d[x[0]]||'';return '<label for="p_'+x[0]+'">'+x[1]+'</label>'+(x[2]==='t'?'<textarea id="p_'+x[0]+'">'+esc(v)+'</textarea>':'<input id="p_'+x[0]+'" value="'+esc(v)+'">')}).join('');
+}
+function profBind(){
+  function vis(){$('p_ra').style.display=$('p_amator').checked?'':'none';$('p_rp').style.display=$('p_proffs').checked?'':'none'}
+  $('p_amator').onchange=vis;$('p_proffs').onchange=vis;vis();
+}
+function profRead(){
+  var o={amator:$('p_amator').checked,proffs:$('p_proffs').checked,rek_amator:$('p_rek_amator').value.trim(),rek_proffs:$('p_rek_proffs').value.trim()};
+  PF.forEach(function(x){var v=$('p_'+x[0]).value.trim();if(v)o[x[0]]=v});
+  return o;
+}
 function fighterEdit(f){
   f=f||{};
-  app.innerHTML='<div class="card"><h2>'+(f.id?'Redigera':'Ny')+' fighter</h2><form id="ff">'+FF.map(function(x){var v=f[x[0]]==null?'':f[x[0]];return '<label for="f_'+x[0]+'">'+x[1]+'</label>'+(x[2]==='t'?'<textarea id="f_'+x[0]+'">'+esc(v)+'</textarea>':'<input id="f_'+x[0]+'" '+(x[2]==='n'?'type="number" step="any" inputmode="decimal"':'')+' value="'+esc(v)+'">')}).join('')+'<p id="m" class="small"></p><div class="row" style="margin-top:10px"><button class="btn">Spara</button><button type="button" class="btn sec" id="c">Avbryt</button></div></form></div>';
+  if(f.id&&!f._p){app.innerHTML='<p class="muted">Laddar…</p>';rpc('fp3_get_profile',{p_id:f.id}).then(function(d){d=d||{};if(!d.styrkor&&f.general_strengths)d.styrkor=f.general_strengths;if(!d.svagheter&&f.general_weaknesses)d.svagheter=f.general_weaknesses;f._p=d;fighterEdit(f)}).catch(function(er){fail(app,er)});return}
+  var d=f._p||{};
+  app.innerHTML='<div class="card"><h2>'+(f.id?'Redigera':'Ny')+' fighter</h2><form id="ff">'+FF.map(function(x){var v=f[x[0]]==null?'':f[x[0]];return '<label for="f_'+x[0]+'">'+x[1]+'</label>'+(x[2]==='t'?'<textarea id="f_'+x[0]+'">'+esc(v)+'</textarea>':'<input id="f_'+x[0]+'" '+(x[2]==='n'?'type="number" step="any" inputmode="decimal"':'')+' value="'+esc(v)+'">')}).join('')+profFields(d)+'<p id="m" class="small"></p><div class="row" style="margin-top:10px"><button class="btn">Spara</button><button type="button" class="btn sec" id="c">Avbryt</button></div></form></div>';
+  profBind();
   $('c').onclick=function(){render()};
   $('ff').onsubmit=function(e){e.preventDefault();var g=function(k){return $('f_'+k).value};if(!nz(g('name'))){fail($('m'),new Error('Namn saknas'));return}
-    rpc('fp3_upsert_fighter',{p_id:f.id||null,p_name:g('name').trim(),p_weight_class:nz(g('weight_class')),p_stance:nz(g('stance')),p_height_cm:num(g('height_cm')),p_reach_cm:num(g('reach_cm')),p_fight_record:nz(g('fight_record')),p_primary_style:nz(g('primary_style')),p_injury_status:nz(g('injury_status')),p_current_training_focus:nz(g('current_training_focus')),p_general_strengths:nz(g('general_strengths')),p_general_weaknesses:nz(g('general_weaknesses'))}).then(function(r){S.view=r.id;render()}).catch(function(er){fail($('m'),er)})};
+    var pd=profRead();
+    var rec=[pd.amator&&pd.rek_amator?'Amatör '+pd.rek_amator:'',pd.proffs&&pd.rek_proffs?'Proffs '+pd.rek_proffs:''].filter(Boolean).join(' · ');
+    rpc('fp3_upsert_fighter',{p_id:f.id||null,p_name:g('name').trim(),p_weight_class:nz(g('weight_class')),p_stance:nz(g('stance')),p_height_cm:num(g('height_cm')),p_reach_cm:num(g('reach_cm')),p_fight_record:nz(rec),p_primary_style:nz(g('primary_style')),p_injury_status:nz(g('injury_status')),p_current_training_focus:nz(g('current_training_focus')),p_general_strengths:nz(pd.styrkor),p_general_weaknesses:nz(pd.svagheter)})
+     .then(function(r){return rpc('fp3_set_profile',{p_id:r.id,p_data:pd}).then(function(){S.view=r.id;render()})}).catch(function(er){fail($('m'),er)})};
 }
 var PF=[['bakgrund','Bakgrund (var kommer fightern ifrån, hur började den?)','t'],['tranat_totalt','Hur länge har fightern tränat totalt?'],['tranat_mma','Hur länge har fightern tränat MMA?'],['andra_sporter','Andra kampsporter / tidigare sporter','t'],['pass_vecka','Pass per vecka just nu'],['hos_mig_sedan','Tränat hos mig sedan'],['tavlingsbakgrund','Tävlingsbakgrund','t'],['senaste_match','Senaste match (datum, motståndare, resultat)','t'],['nasta_match','Nästa match (datum, motståndare, viktklass)','t'],['styrkor','Styrkor','t'],['svagheter','Svagheter','t'],['mentalt','Mentalt (press, matchdag, motgång)','t'],['gamla_skador','Gamla skador','t'],['skonas','Ska skonas','t'],['fokus','Träningsfokus nu','t'],['mal','Mål det här halvåret','t'],['ovrigt','Övrigt','t']];
 function profileCard(id){
@@ -147,44 +167,10 @@ function profileCard(id){
 }
 function profileEdit(id,d){
   var box=$('pf');
-  box.innerHTML='<h3 style="margin-top:0">Profil</h3><form id="pform"><label>Nivå</label><div class="row"><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="p_amator"'+(d.amator?' checked':'')+'> Amatör</label><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="p_proffs"'+(d.proffs?' checked':'')+'> Proffs</label></div>'+
-   '<div id="p_ra"><label for="p_rek_amator">Amatörrekord (V-F-O)</label><input id="p_rek_amator" value="'+esc(d.rek_amator||'')+'"></div><div id="p_rp"><label for="p_rek_proffs">Proffsrekord (V-F-O)</label><input id="p_rek_proffs" value="'+esc(d.rek_proffs||'')+'"></div>'+
-   PF.map(function(x){var v=d[x[0]]||'';return '<label for="p_'+x[0]+'">'+x[1]+'</label>'+(x[2]==='t'?'<textarea id="p_'+x[0]+'">'+esc(v)+'</textarea>':'<input id="p_'+x[0]+'" value="'+esc(v)+'">')}).join('')+
-   '<p id="pm" class="small"></p><div class="row" style="margin-top:10px"><button class="btn">Spara profil</button><button type="button" class="btn sec" id="pc">Avbryt</button></div></form>';
-  function vis(){$('p_ra').style.display=$('p_amator').checked?'':'none';$('p_rp').style.display=$('p_proffs').checked?'':'none'}
-  $('p_amator').onchange=vis;$('p_proffs').onchange=vis;vis();
+  box.innerHTML='<form id="pform">'+profFields(d)+'<p id="pm" class="small"></p><div class="row" style="margin-top:10px"><button class="btn">Spara profil</button><button type="button" class="btn sec" id="pc">Avbryt</button></div></form>';
+  profBind();
   $('pc').onclick=function(){profileCard(id)};
-  $('pform').onsubmit=function(e){e.preventDefault();
-    var o={amator:$('p_amator').checked,proffs:$('p_proffs').checked,rek_amator:$('p_rek_amator').value.trim(),rek_proffs:$('p_rek_proffs').value.trim()};
-    PF.forEach(function(x){var v=$('p_'+x[0]).value.trim();if(v)o[x[0]]=v});
-    rpc('fp3_set_profile',{p_id:id,p_data:o}).then(function(){profileCard(id)}).catch(function(er){fail($('pm'),er)})};
-}
-function mdLite(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>')}
-function weeklyCard(id){
-  var box=$('wk');if(!box)return;
-  rpc('fp3_list_summaries',{p_fighter_id:id}).then(function(a){a=a||[];
-    box.innerHTML='<div class="row" style="justify-content:space-between"><h3 style="margin:0">Veckosammanfattning</h3><button class="btn sm" id="wb">Sammanfatta veckan</button></div><p class="small muted">Kör när du vill. Gäller senaste 7 dagarna. Skriven av AI utifrån incheckningar och dina anteckningar. Fightern har en egen veckoanalys i sin länk (en per vecka, från söndag kl 20).</p><p id="wm" class="small"></p><div id="wl">'+(a.map(function(x){return '<div class="note"><q>'+esc(String(x.created_at||x.week_start).slice(0,10))+' (från '+esc(x.week_start)+')</q>'+mdLite(x.summary)+'</div>'}).join('')||'<p class="muted small">Inga än.</p>')+'</div>';
-    $('wb').onclick=function(){var b=$('wb');b.disabled=true;b.textContent='Skriver…';$('wm').textContent='';
-      api('/functions/v1/coach_weekly',{fighter_id:id}).then(function(){weeklyCard(id)}).catch(function(er){b.disabled=false;b.textContent='Sammanfatta veckan';fail($('wm'),new Error(er.message==='ingen_data'?'Inga incheckningar eller anteckningar förra veckan.':er.message))})};
-  }).catch(function(er){fail(box,er)});
-}
-function iso(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
-function analysisCard(id){
-  var box=$('an');if(!box)return;
-  rpc('fp3_list_analyses',{p_fighter_id:id}).then(function(a){a=a||[];
-    box.innerHTML='<h3 style="margin:0 0 6px">Fördjupad analys</h3><p class="small muted">Allt som finns inlagt för fightern under vald period: incheckningar, anteckningar, profil, matcher och lager. Kör när du vill.</p>'+
-     '<label for="ap">Period</label><select id="ap"><option value="30">Senaste 30 dagarna</option><option value="90">Senaste 3 månaderna</option><option value="180">Senaste 6 månaderna</option><option value="365">Senaste året</option><option value="all">Allt som finns</option><option value="custom">Eget intervall…</option></select>'+
-     '<div id="ac" class="g2" hidden><div><label for="af">Från</label><input id="af" type="date"></div><div><label for="at">Till</label><input id="at" type="date" value="'+today()+'"></div></div>'+
-     '<p id="am" class="small"></p><button class="btn" id="ab2">Analysera</button><div id="al" style="margin-top:12px">'+
-     (a.map(function(x){return '<div class="note"><q>'+esc(x.label||'')+' · '+esc(x.period_from)+' → '+esc(x.period_to)+' · körd '+esc(String(x.created_at).slice(0,10))+'</q>'+mdLite(x.summary)+'</div>'}).join('')||'<p class="muted small">Inga analyser än.</p>')+'</div>';
-    $('ap').onchange=function(){$('ac').hidden=this.value!=='custom'};
-    $('ab2').onclick=function(){var v=$('ap').value,to=today(),from,lab=$('ap').options[$('ap').selectedIndex].text;
-      if(v==='custom'){from=$('af').value;to=$('at').value;lab='Eget intervall';if(!from||!to){fail($('am'),new Error('Välj från- och tilldatum'));return}}
-      else if(v==='all'){from='2015-01-01'}
-      else{var d=new Date();d.setDate(d.getDate()-Number(v));from=iso(d)}
-      var b=$('ab2');b.disabled=true;b.textContent='Analyserar… (kan ta en minut)';$('am').textContent='';
-      api('/functions/v1/coach_analysis',{fighter_id:id,from:from,to:to,label:lab}).then(function(){analysisCard(id)}).catch(function(er){b.disabled=false;b.textContent='Analysera';fail($('am'),new Error(er.message==='ingen_data'?'Inget inlagt under den perioden.':er.message))})};
-  }).catch(function(er){fail(box,er)});
+  $('pform').onsubmit=function(e){e.preventDefault();rpc('fp3_set_profile',{p_id:id,p_data:profRead()}).then(function(){profileCard(id)}).catch(function(er){fail($('pm'),er)})};
 }
 function fighterView(id){
   app.innerHTML='<p class="muted">Laddar…</p>';
