@@ -114,6 +114,39 @@ label.f{display:block;font-weight:650;margin:0 0 6px}
     return h + '</div>';
   }
 
+
+  function fmt(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
+  function wfetch(mode) {
+    return fetch(SUPABASE_URL + '/functions/v1/fighter_weekly', {
+      method: 'POST',
+      headers: { apikey: ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: token, mode: mode })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('Fel ' + r.status)); e.code = j.error; throw e; } return j; });
+    });
+  }
+  function weekly() {
+    var box = document.getElementById('wk');
+    if (!box) { return; }
+    function draw(j) {
+      if (j.summary) {
+        box.innerHTML = '<h2 style="margin:0 0 8px;font-size:18px">Din veckoanalys</h2><p class="muted" style="margin:0 0 10px">Vecka ' + esc(j.week_start) + ' – ' + esc(j.week_end) + '</p><div>' + fmt(j.summary) + '</div>';
+        return;
+      }
+      box.innerHTML = '<h2 style="margin:0 0 8px;font-size:18px">Din veckoanalys</h2><p class="muted" style="margin:0 0 10px">Få en analys av din vecka (' + esc(j.week_start) + ' – ' + esc(j.week_end) + ') baserat på dina svar. Du kan göra den en gång i veckan.</p>' +
+        '<button class="btn sec" type="button" id="wgo">Skapa min veckoanalys</button><p class="err" id="werr" hidden></p>';
+      document.getElementById('wgo').onclick = function () {
+        var b = this; b.disabled = true; b.textContent = 'Skriver…';
+        wfetch('make').then(draw).catch(function (e) {
+          b.disabled = false; b.textContent = 'Skapa min veckoanalys';
+          var w = document.getElementById('werr'); w.hidden = false;
+          w.textContent = e.code === 'ingen_data' ? 'Du har inga incheckningar den här veckan än.' : 'Det gick inte nu. Försök igen om en stund.';
+        });
+      };
+    }
+    wfetch('get').then(draw).catch(function () { box.hidden = true; });
+  }
+
   function showInvalid() {
     app.innerHTML = '<h1>Länken fungerar inte</h1>' +
       '<p class="sub">Den här länken är ogiltig eller avstängd. Be din tränare om en ny länk.</p>';
@@ -166,9 +199,10 @@ label.f{display:block;font-weight:650;margin:0 0 6px}
           '<textarea id="work" name="work" maxlength="1000"></textarea></div>' +
         '<p class="err" id="err" role="alert" hidden></p>' +
         '<button class="btn" type="submit" id="send">Skicka</button>' +
-      '</form>';
+      '</form><div class="card" id="wk"></div>';
 
     var form = document.getElementById('form');
+    weekly();
     form.addEventListener('change', function (e) {
       if (e.target && e.target.name === 'pain') {
         document.getElementById('painWrap').hidden = e.target.value !== 'yes';
