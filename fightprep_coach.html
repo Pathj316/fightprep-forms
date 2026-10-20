@@ -87,7 +87,6 @@ textarea{min-height:76px;resize:vertical}
 <body>
 <header><div class="bar"><h1>FightPrep</h1>
 <nav id="tabs" class="row" hidden>
-<button class="tab" data-tab="pass">Pass</button>
 <button class="tab" data-tab="fighters">Fighters</button>
 <button class="tab" data-tab="sum">Sammanställning</button>
 <button class="tab" data-tab="opps">Motståndare</button>
@@ -103,7 +102,7 @@ var CATS=[['striking','Striking'],['grappling','Grappling'],['wrestling','Brottn
 var CN={};CATS.forEach(function(c){CN[c[0]]=c[1]});
 var SRC=[['match','Match'],['sparring','Sparring'],['training_clip','Träningsklipp'],['network','Nätverk']];
 var CONF=[['established_pattern','Etablerat mönster'],['single_observation','Enstaka observation'],['coach_guess','Coachens gissning']];
-var S={token:null,refresh:null,exp:0,tab:'pass',view:null,archetypes:[],questions:[],date:today0(),type:'grappling',sumId:'',sumDays:28};
+var S={token:null,refresh:null,exp:0,tab:'fighters',view:null,archetypes:[],questions:[],date:today0(),type:'grappling',sumId:'',sumDays:28};
 function today0(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
 var app=document.getElementById('app'),tabs=document.getElementById('tabs');
 
@@ -139,7 +138,7 @@ function boot(){
 tabs.onclick=function(e){var t=e.target.getAttribute('data-tab');if(t){S.tab=t;S.view=null;render()}};
 
 function render(){
-  Array.prototype.forEach.call(tabs.querySelectorAll('[data-tab]'),function(b){b.setAttribute('aria-selected',b.getAttribute('data-tab')===S.tab)});
+  Array.prototype.forEach.call(tabs.querySelectorAll('[data-tab]'),function(b){b.setAttribute('aria-selected',b.getAttribute('data-tab')===(S.tab==='pass'?'fighters':S.tab))});
   if(S.tab==='pass')passView();
   else if(S.tab==='sum')sumView();
   else if(S.tab==='fighters')S.view?fighterView(S.view):fighterList();
@@ -151,7 +150,8 @@ function top(btnId,label,fn){return '<button class="btn sec sm" id="'+btnId+'">�
 
 /* ---------- Fighters ---------- */
 function fighterList(){
-  app.innerHTML='<div class="row" style="justify-content:space-between"><h2>Fighters</h2><div class="row"><button class="btn sec sm" id="imp">Hämta från mina profiler</button><button class="btn sm" id="nf">+ Ny</button></div></div><p id="im" class="small"></p><div class="card" id="tm"><p class="muted small">Laddar lagsanalys…</p></div><div id="l"><p class="muted">Laddar…</p></div>';
+  app.innerHTML='<div class="row" style="justify-content:space-between"><h2>Fighters</h2><div class="row"><button class="btn sec sm" id="imp">Hämta från mina profiler</button><button class="btn sm" id="nf">+ Ny</button></div></div><p id="im" class="small"></p><div id="l"><p class="muted">Laddar…</p></div><h2 style="margin-top:18px">Laget</h2><div class="card"><h3 style="margin:0 0 6px">Lagpass</h3><p class="small muted">Fyll i vad hela gruppen gjorde, vilka som var där och intensiteten. Fighter-anteckningar lägger du under respektive fighter.</p><button class="btn sec" id="lp">Öppna lagpass</button></div><div class="card" id="wn"></div><div class="card" id="tm"><p class="muted small">Laddar lagsanalys…</p></div>';
+  $('lp').onclick=function(){S.tab='pass';S.view=null;render()};weekNote();
   $('nf').onclick=function(){fighterEdit(null)};
   teamCard();
   $('imp').onclick=function(){if(!confirm('Skapa fighters från dina klubbprofiler? Fighters du raderat skapas då om. Använd bara första gången.'))return;rpc('fp3_import_profiles').then(function(r){$('im').className='small ok';$('im').textContent=(r&&r.imported||0)+' fighters hämtade och kopplade till dina lager.';fighterList()}).catch(function(er){fail($('im'),er)})};
@@ -481,11 +481,11 @@ function archHtml(sc){
     return '<div style="border-top:1px solid var(--border);padding:8px 0"><b>'+esc(sv[0])+'</b><div class="small muted">'+esc(sv[1])+'</div><select data-arch="'+esc(k)+'" data-was="'+near[0]+'" style="margin-top:4px">'+optsH+'</select></div>'}).join('');
 }
 var WDN=['sön','mån','tis','ons','tors','fre','lör'];
-function passCard(id){
+function passCard(id,fname){
   var box=$('pc');if(!box)return;
   rpc('fp8_fighter_passes',{p_fighter_id:id,p_days:90}).then(function(days){days=days||[];
     var form='<details class="card" style="margin:0 0 10px"><summary><b>+ Lägg till anteckning</b></summary><div class="g2"><div><label for="pnd">Datum</label><input type="date" id="pnd" value="'+esc(today())+'"></div><div><label for="pnt">Passtyp</label><select id="pnt">'+opts(COMBAT,'mma')+'</select></div></div>'+
-      '<label for="pnc">Anteckning om</label><select id="pnc">'+CQ.map(function(q,qi){return '<option value="q'+qi+'">'+esc(q[0])+'</option>'}).join('')+CATS.map(function(c){return '<option value="c'+esc(c[0])+'">'+esc(c[1])+'</option>'}).join('')+'</select>'+
+      '<div id="vcf" style="margin:8px 0"></div><label for="pnc">Anteckning om</label><select id="pnc">'+CQ.map(function(q,qi){return '<option value="q'+qi+'">'+esc(q[0])+'</option>'}).join('')+CATS.map(function(c){return '<option value="c'+esc(c[0])+'">'+esc(c[1])+'</option>'}).join('')+'</select>'+
       '<textarea id="pnx" style="margin-top:8px" placeholder="Skriv fritt…"></textarea><label for="pnf">Flagga</label><select id="pnf">'+opts(FLAGS,'')+'</select><p id="pnm" class="small"></p><button class="btn sm" id="pns">Spara</button></details>';
     var list=days.map(function(d,i){
       var dt=new Date(d.date+'T12:00:00'),types={};
@@ -499,11 +499,12 @@ function passCard(id){
       return '<details class="card" style="margin:0 0 8px"'+(i===0?' open':'')+'>'+head+'<div style="margin-top:8px">'+(body||'<span class="muted small">Inget inlagt.</span>')+'</div></details>';
     }).join('')||'<p class="muted small">Inga pass inlagda för den här fightern de senaste 90 dagarna.</p>';
     box.innerHTML='<h3 style="margin:0 0 6px">Pass</h3><p class="small muted">Fighterns egna svar och dina anteckningar, dag för dag. Senaste 90 dagarna.</p>'+form+list;
+    voiceCard({box:'vcf',fixed:[{id:id,name:fname||'Fightern'}],date:function(){return $('pnd').value},type:function(){return $('pnt').value},after:function(){passCard(id,fname)}});
     $('pns').onclick=function(){var t=nz($('pnx').value),m=$('pnm');if(!t){fail(m,new Error('Skriv något först'));return}
       var v=$('pnc').value,cat,q=null;if(v.charAt(0)==='q'){var qq=CQ[+v.slice(1)];cat=qq[1];q=qq[2]}else cat=v.slice(1);
       var d=$('pnd').value,ty=$('pnt').value,fg=$('pnf').value;this.disabled=true;m.className='small muted';m.textContent='Sparar…';var b=this;
-      rpc('fp2_coach_add_note',{p_fighter_id:id,p_date:d,p_type:ty,p_category:cat,p_question:q,p_note:t}).then(function(){return fg?rpc('fp6_set_flag',{p_date:d,p_type:ty,p_fighter_id:id,p_flag:fg}):null}).then(function(){passCard(id)}).catch(function(er){b.disabled=false;fail(m,er)})};
-    box.onclick=function(e){var r=e.target.getAttribute('data-prm');if(r){e.target.disabled=true;rpc('fp2_coach_remove_note',{p_id:r}).then(function(){passCard(id)}).catch(function(er){alert(er.message)})}};
+      rpc('fp2_coach_add_note',{p_fighter_id:id,p_date:d,p_type:ty,p_category:cat,p_question:q,p_note:t}).then(function(){return fg?rpc('fp6_set_flag',{p_date:d,p_type:ty,p_fighter_id:id,p_flag:fg}):null}).then(function(){passCard(id,fname)}).catch(function(er){b.disabled=false;fail(m,er)})};
+    box.onclick=function(e){var r=e.target.getAttribute('data-prm');if(r){e.target.disabled=true;rpc('fp2_coach_remove_note',{p_id:r}).then(function(){passCard(id,fname)}).catch(function(er){alert(er.message)})}};
   }).catch(function(er){fail(box,er)});
 }
 function fighterView(id){
@@ -524,7 +525,7 @@ function fighterView(id){
      '<div class="card"><h3 style="margin-top:0">Incheckningslänk</h3><p class="small muted">Personlig länk fightern använder efter varje pass. Visas bara en gång.</p><label>Adress till fighter_checkin.html</label><input id="lb" type="url" value="'+esc(ls('fp3_base')||'')+'"><p id="lo" class="small"></p><div class="row"><button class="btn sm" id="lc">Skapa ny länk</button><button class="btn sec sm" id="lr">Stäng av länk</button><button class="btn sec sm" id="ls">Sammanställning</button></div></div>'+
      '<div class="card" id="arc"><h3 style="margin-top:0">Arketyper</h3><p class="small muted">En fighter kan ha flera. Välj hur tydligt varje arketyp passar. Hoppa över de som inte passar.</p>'+archHtml(sc)+'<p id="m2" class="small"></p><button class="btn" id="ab">Spara arketyper</button></div>';
     app.innerHTML=h;
-    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};profileCard(id);passCard(id);weeklyCard(id);analysisCard(id);
+    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};profileCard(id);passCard(id,f.name);weeklyCard(id);analysisCard(id);
     $('dl').onclick=function(){if(confirm('Radera '+f.name+' och all kopplad data?'))rpc('fp3_delete_fighter',{p_id:id}).then(function(){S.view=null;render()}).catch(function(er){alert(er.message)})};
     $('na').onclick=function(){var t=nz($('nt').value);if(!t){fail($('m1'),new Error('Skriv något'));return}rpc('fp3_add_fighter_note',{p_fighter_id:id,p_category:$('nc').value,p_note:t,p_match_label:nz($('nm').value)}).then(function(){fighterView(id)}).catch(function(er){fail($('m1'),er)})};
     $('nl').onclick=function(e){var r=e.target.getAttribute('data-rm');if(r)rpc('fp3_delete_fighter_note',{p_id:r}).then(function(){fighterView(id)}).catch(function(er){alert(er.message)})};
@@ -617,8 +618,8 @@ var FLAGS=[['','Ingen flagga'],['folj_upp','Följ upp'],['prata','Prata med figh
 var FN={folj_upp:'Följ upp',prata:'Prata med fightern',skadeoro:'Skadeoro'};
 function passView(){
   if(!COMBAT.some(function(c){return c[0]===S.type}))S.type='mma';
-  app.innerHTML='<h2>Pass</h2><div class="card"><div class="g2"><div><label for="pd">Datum</label><input type="date" id="pd" value="'+esc(S.date)+'"></div><div><label for="pt">Passtyp</label><select id="pt">'+opts(COMBAT,S.type)+'</select></div></div><p class="small muted">Du fyller bara i de kampsportspass du är på. Missade du dagen kan du lägga in anteckningar i efterhand, eller hoppa över den.</p></div><div class="card" id="vc"></div><div id="pl"><p class="muted">Laddar…</p></div><div class="card" id="wn"></div>';
-  $('pd').onchange=function(){S.date=this.value;loadPass();weekNote()};$('pt').onchange=function(){S.type=this.value;loadPass()};loadPass();weekNote();voiceCard();
+  app.innerHTML='<div class="row" style="justify-content:space-between"><button class="btn sec sm" id="pbk">← Fighters</button></div><h2>Lagpass</h2><div class="card"><div class="g2"><div><label for="pd">Datum</label><input type="date" id="pd" value="'+esc(S.date)+'"></div><div><label for="pt">Passtyp</label><select id="pt">'+opts(COMBAT,S.type)+'</select></div></div><p class="small muted">Du fyller bara i de kampsportspass du är på. Missade du dagen kan du lägga in anteckningar i efterhand, eller hoppa över den.</p></div><div class="card" id="vc"></div><div id="pl"><p class="muted">Laddar…</p></div><div class="card" id="wn"></div>';
+  $('pbk').onclick=function(){S.tab='fighters';S.view=null;render()};$('pd').onchange=function(){S.date=this.value;loadPass();weekNote()};$('pt').onchange=function(){S.type=this.value;loadPass()};loadPass();weekNote();voiceCard();
 }
 function weekNote(){
   var box=$('wn');if(!box)return;
@@ -627,8 +628,9 @@ function weekNote(){
     $('wns').onclick=function(){var m=$('wnm');m.className='small muted';m.textContent='Sparar…';rpc('fp6_week_note_save',{p_week:S.date,p_note:$('wnt').value}).then(function(){m.className='small ok';m.textContent='Sparat'}).catch(function(er){fail(m,er)})};
   }).catch(function(er){fail(box,er)});
 }
-function voiceCard(){
-  var box=$('vc');if(!box)return;
+function voiceCard(cfg){
+  cfg=cfg||{};var box=$(cfg.box||'vc');if(!box)return;
+  function VD(){return cfg.date?cfg.date():S.date}function VT(){return cfg.type?cfg.type():S.type}
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition,rec=null,on=false,base='',FL=[];
   box.innerHTML='<h3 style="margin:0 0 6px">Prata in passet</h3><p class="small muted">Tryck på mikrofonen och prata fritt om passet och fighterna. AI:n sorterar det i rätt fält. Inget sparas förrän du godkänner.</p>'+
     (SR?'<div class="row" style="margin-bottom:8px"><button class="btn" id="vmic" type="button">🎙️ Spela in</button></div>':'<p class="small muted">Den här webbläsaren har ingen inbyggd röstigenkänning. Använd mikrofonen på tangentbordet i rutan nedan i stället.</p>')+
@@ -647,6 +649,7 @@ function voiceCard(){
   function fsel(id){return '<select data-pf>'+'<option value="">Välj fighter…</option>'+FL.map(function(f){return '<option value="'+esc(f.id)+'"'+(f.id===id?' selected':'')+'>'+esc(f.name)+'</option>'}).join('')+'</select>'}
   function nm(id){var f=FL.filter(function(x){return x.id===id})[0];return f?f.name:'?'}
   function review(r){
+    if(cfg.fixed){r.focus=null;r.standout=null;r.intensity=null;r.attendees=[];r.week_note=null}
     var cur={f:$('sf')?$('sf').value:'',s:$('ss')?$('ss').value:'',i:$('si')?$('si').value:''};
     var focus=r.focus||cur.f,stand=(cur.s&&r.standout)?cur.s+' '+r.standout:(r.standout||cur.s),inten=r.intensity||cur.i;
     var h='<div style="margin-top:12px"><h3 style="margin:0 0 6px">Kontrollera innan det sparas</h3><p class="small muted">Rätta det som är fel och avmarkera det du inte vill spara.</p>';
@@ -660,21 +663,21 @@ function voiceCard(){
     $('rsave').onclick=function(){
       var b=this,m=$('rsm'),steps=[],bad=false;
       if($('rp')&&$('rp').checked){var att=[];Array.prototype.forEach.call(document.querySelectorAll('[data-att]'),function(c){if(c.checked)att.push(c.getAttribute('data-att'))});r.attendees.forEach(function(a){if(att.indexOf(a)<0)att.push(a)});
-        steps.push(function(){return rpc('fp6_session_save',{p_date:S.date,p_type:S.type,p_focus:$('rpf').value,p_intensity:$('rpi').value?+$('rpi').value:null,p_standout:$('rps').value,p_attendees:att})})}
+        steps.push(function(){return rpc('fp6_session_save',{p_date:VD(),p_type:VT(),p_focus:$('rpf').value,p_intensity:$('rpi').value?+$('rpi').value:null,p_standout:$('rps').value,p_attendees:att})})}
       Array.prototype.forEach.call($('vr').querySelectorAll('[data-rn]'),function(d){if(!d.querySelector('[data-on]').checked)return;var fid=d.querySelector('[data-pf]').value,t=nz(d.querySelector('[data-pt]').value);if(!fid||!t){bad=true;return}
-        steps.push(function(){return rpc('fp2_coach_add_note',{p_fighter_id:fid,p_date:S.date,p_type:S.type,p_category:d.querySelector('[data-pc]').value,p_question:null,p_note:t})})});
-      Array.prototype.forEach.call($('vr').querySelectorAll('[data-rf]'),function(d){if(!d.querySelector('[data-on]').checked)return;var f=r.flags[+d.getAttribute('data-rf')];steps.push(function(){return rpc('fp6_set_flag',{p_date:S.date,p_type:S.type,p_fighter_id:f.fighter_id,p_flag:f.flag})})});
-      if($('rwc')&&$('rwc').checked)steps.push(function(){return rpc('fp6_week_note_get',{p_week:S.date}).then(function(w){var old=(w&&w.note)||'';return rpc('fp6_week_note_save',{p_week:S.date,p_note:(old?old+'\n\n':'')+$('rwt').value})})});
+        steps.push(function(){return rpc('fp2_coach_add_note',{p_fighter_id:fid,p_date:VD(),p_type:VT(),p_category:d.querySelector('[data-pc]').value,p_question:null,p_note:t})})});
+      Array.prototype.forEach.call($('vr').querySelectorAll('[data-rf]'),function(d){if(!d.querySelector('[data-on]').checked)return;var f=r.flags[+d.getAttribute('data-rf')];steps.push(function(){return rpc('fp6_set_flag',{p_date:VD(),p_type:VT(),p_fighter_id:f.fighter_id,p_flag:f.flag})})});
+      if($('rwc')&&$('rwc').checked)steps.push(function(){return rpc('fp6_week_note_get',{p_week:VD()}).then(function(w){var old=(w&&w.note)||'';return rpc('fp6_week_note_save',{p_week:VD(),p_note:(old?old+'\n\n':'')+$('rwt').value})})});
       if(bad){fail(m,new Error('Välj fighter och skriv text för varje markerad anteckning, eller avmarkera den.'));return}
       if(!steps.length){fail(m,new Error('Inget är markerat.'));return}
       b.disabled=true;m.className='small muted';m.textContent='Sparar…';
-      steps.reduce(function(p,s){return p.then(s)},Promise.resolve()).then(function(){$('vt').value='';$('vr').innerHTML='<p class="small ok">Sparat. Det syns nu i passvyn nedan.</p>';loadPass();weekNote()}).catch(function(er){b.disabled=false;fail(m,er)});
+      steps.reduce(function(p,s){return p.then(s)},Promise.resolve()).then(function(){$('vt').value='';$('vr').innerHTML='<p class="small ok">Sparat. Det syns nu i passvyn nedan.</p>';(cfg.after?cfg.after():(loadPass(),weekNote()))}).catch(function(er){b.disabled=false;fail(m,er)});
     };
   }
   $('vsort').onclick=function(){
     stop();var t=nz($('vt').value);if(!t){fail($('vm'),new Error('Prata in eller skriv något först.'));return}
     var b=this;b.disabled=true;b.textContent='Sorterar…';$('vm').textContent='';$('vr').innerHTML='';
-    rpc('fp3_list_fighters').then(function(a){FL=(a||[]).map(function(f){return{id:f.id,name:f.name}});return api('/functions/v1/coach_voice_sort',{text:t,fighters:FL,date:S.date,type:S.type})}).then(function(r){b.disabled=false;b.textContent='Sortera med AI';review(r)}).catch(function(er){b.disabled=false;b.textContent='Sortera med AI';fail($('vm'),new Error(er.message==='tom_text'?'Det blev för lite text.':er.message))});
+    (cfg.fixed?Promise.resolve(cfg.fixed):rpc('fp3_list_fighters')).then(function(a){FL=(a||[]).map(function(f){return{id:f.id,name:f.name}});return api('/functions/v1/coach_voice_sort',{text:t,fighters:FL,date:VD(),type:VT()})}).then(function(r){b.disabled=false;b.textContent='Sortera med AI';review(r)}).catch(function(er){b.disabled=false;b.textContent='Sortera med AI';fail($('vm'),new Error(er.message==='tom_text'?'Det blev för lite text.':er.message))});
   };
 }
 function noteH(n){return '<div class="note"><q>'+esc((CN[n.category]||n.category)+(n.question?' – '+n.question:''))+'</q>'+esc(n.note)+' <button class="btn sec sm" data-rm="'+esc(n.id)+'">Ta bort</button></div>'}
