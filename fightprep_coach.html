@@ -590,8 +590,8 @@ var FLAGS=[['','Ingen flagga'],['folj_upp','Följ upp'],['prata','Prata med figh
 var FN={folj_upp:'Följ upp',prata:'Prata med fightern',skadeoro:'Skadeoro'};
 function passView(){
   if(!COMBAT.some(function(c){return c[0]===S.type}))S.type='mma';
-  app.innerHTML='<h2>Pass</h2><div class="card"><div class="g2"><div><label for="pd">Datum</label><input type="date" id="pd" value="'+esc(S.date)+'"></div><div><label for="pt">Passtyp</label><select id="pt">'+opts(COMBAT,S.type)+'</select></div></div><p class="small muted">Du fyller bara i de kampsportspass du är på. Missade du dagen kan du lägga in anteckningar i efterhand, eller hoppa över den.</p></div><div id="pl"><p class="muted">Laddar…</p></div><div class="card" id="wn"></div>';
-  $('pd').onchange=function(){S.date=this.value;loadPass();weekNote()};$('pt').onchange=function(){S.type=this.value;loadPass()};loadPass();weekNote();
+  app.innerHTML='<h2>Pass</h2><div class="card"><div class="g2"><div><label for="pd">Datum</label><input type="date" id="pd" value="'+esc(S.date)+'"></div><div><label for="pt">Passtyp</label><select id="pt">'+opts(COMBAT,S.type)+'</select></div></div><p class="small muted">Du fyller bara i de kampsportspass du är på. Missade du dagen kan du lägga in anteckningar i efterhand, eller hoppa över den.</p></div><div class="card" id="vc"></div><div id="pl"><p class="muted">Laddar…</p></div><div class="card" id="wn"></div>';
+  $('pd').onchange=function(){S.date=this.value;loadPass();weekNote()};$('pt').onchange=function(){S.type=this.value;loadPass()};loadPass();weekNote();voiceCard();
 }
 function weekNote(){
   var box=$('wn');if(!box)return;
@@ -599,6 +599,56 @@ function weekNote(){
     box.innerHTML='<h3 style="margin:0 0 6px">Veckans helhetsbild</h3><p class="small muted">Vecka från '+esc(r.week_start)+'. Vad var bäst, vad oroar dig, vem behöver extra uppmärksamhet. Gör gärna på söndagen.</p><textarea id="wnt">'+esc(r.note||'')+'</textarea><p id="wnm" class="small"></p><button class="btn sm" id="wns">Spara veckobild</button>';
     $('wns').onclick=function(){var m=$('wnm');m.className='small muted';m.textContent='Sparar…';rpc('fp6_week_note_save',{p_week:S.date,p_note:$('wnt').value}).then(function(){m.className='small ok';m.textContent='Sparat'}).catch(function(er){fail(m,er)})};
   }).catch(function(er){fail(box,er)});
+}
+function voiceCard(){
+  var box=$('vc');if(!box)return;
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition,rec=null,on=false,base='',FL=[];
+  box.innerHTML='<h3 style="margin:0 0 6px">Prata in passet</h3><p class="small muted">Tryck på mikrofonen och prata fritt om passet och fighterna. AI:n sorterar det i rätt fält. Inget sparas förrän du godkänner.</p>'+
+    (SR?'<div class="row" style="margin-bottom:8px"><button class="btn" id="vmic" type="button">🎙️ Spela in</button></div>':'<p class="small muted">Den här webbläsaren har ingen inbyggd röstigenkänning. Använd mikrofonen på tangentbordet i rutan nedan i stället.</p>')+
+    '<textarea id="vt" style="min-height:110px" placeholder="Det du säger hamnar här. Du kan rätta, skriva eller använda tangentbordets mikrofon."></textarea><p id="vm" class="small"></p><button class="btn sec" id="vsort" type="button">Sortera med AI</button><div id="vr"></div>';
+  function stop(){on=false;if(rec){try{rec.stop()}catch(e){}}var b=$('vmic');if(b){b.textContent='🎙️ Spela in';b.classList.remove('danger')}}
+  if(SR){
+    $('vmic').onclick=function(){
+      if(on){stop();return}
+      rec=new SR();rec.lang='sv-SE';rec.continuous=true;rec.interimResults=true;base=$('vt').value?$('vt').value.replace(/\s*$/,' '):'';
+      rec.onresult=function(e){var interim='';for(var i=e.resultIndex;i<e.results.length;i++){var r=e.results[i];if(r.isFinal)base+=r[0].transcript.trim()+' ';else interim+=r[0].transcript}$('vt').value=base+interim};
+      rec.onerror=function(e){if(e.error==='not-allowed'||e.error==='service-not-allowed'){stop();fail($('vm'),new Error('Mikrofonen är inte tillåten i webbläsaren.'))}};
+      rec.onend=function(){if(on){try{rec.start()}catch(e){stop()}}};
+      try{rec.start();on=true;this.textContent='⏹ Stoppa inspelningen';$('vm').textContent=''}catch(e){fail($('vm'),e)}
+    };
+  }
+  function fsel(id){return '<select data-pf>'+'<option value="">Välj fighter…</option>'+FL.map(function(f){return '<option value="'+esc(f.id)+'"'+(f.id===id?' selected':'')+'>'+esc(f.name)+'</option>'}).join('')+'</select>'}
+  function nm(id){var f=FL.filter(function(x){return x.id===id})[0];return f?f.name:'?'}
+  function review(r){
+    var cur={f:$('sf')?$('sf').value:'',s:$('ss')?$('ss').value:'',i:$('si')?$('si').value:''};
+    var focus=r.focus||cur.f,stand=(cur.s&&r.standout)?cur.s+' '+r.standout:(r.standout||cur.s),inten=r.intensity||cur.i;
+    var h='<div style="margin-top:12px"><h3 style="margin:0 0 6px">Kontrollera innan det sparas</h3><p class="small muted">Rätta det som är fel och avmarkera det du inte vill spara.</p>';
+    if(r.focus||r.standout||r.intensity)h+='<div class="note"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rp" checked> <b>Passinfo</b></label><label>Vad gick passet ut på?</label><textarea id="rpf" style="min-height:50px">'+esc(focus)+'</textarea><label>Intensitet (1–5)</label><select id="rpi"><option value="">Hoppa över</option>'+[1,2,3,4,5].map(function(n){return '<option value="'+n+'"'+(+inten===n?' selected':'')+'>'+n+'</option>'}).join('')+'</select><label>Något som sticker ut?</label><textarea id="rps" style="min-height:50px">'+esc(stand)+'</textarea>'+(r.attendees.length?'<div class="small muted" style="margin-top:6px">Markeras som närvarande: '+r.attendees.map(function(a){return esc(nm(a))}).join(', ')+'</div>':'')+'</div>';
+    h+=r.notes.map(function(n,i){return '<div class="note" data-rn="'+i+'"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-on checked> <b>Anteckning</b></label>'+fsel(n.fighter_id)+'<select data-pc style="margin-top:6px">'+opts(CATS,n.category)+'</select><textarea data-pt style="margin-top:6px;min-height:50px">'+esc(n.text)+'</textarea></div>'}).join('');
+    h+=r.flags.map(function(f,i){return '<div class="note" data-rf="'+i+'"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-on checked> <b>Flagga:</b> '+esc(nm(f.fighter_id))+' – '+esc(FN[f.flag]||f.flag)+'</label></div>'}).join('');
+    if(r.week_note)h+='<div class="note"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rwc" checked> <b>Veckans helhetsbild</b> (läggs till under den du har)</label><textarea id="rwt" style="min-height:50px">'+esc(r.week_note)+'</textarea></div>';
+    if(r.oklart.length)h+='<div class="note"><b>Kunde inte placeras:</b><ul>'+r.oklart.map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul></div>';
+    h+='<p id="rsm" class="small"></p><button class="btn" id="rsave" type="button">Spara valda</button></div>';
+    $('vr').innerHTML=h;
+    $('rsave').onclick=function(){
+      var b=this,m=$('rsm'),steps=[],bad=false;
+      if($('rp')&&$('rp').checked){var att=[];Array.prototype.forEach.call(document.querySelectorAll('[data-att]'),function(c){if(c.checked)att.push(c.getAttribute('data-att'))});r.attendees.forEach(function(a){if(att.indexOf(a)<0)att.push(a)});
+        steps.push(function(){return rpc('fp6_session_save',{p_date:S.date,p_type:S.type,p_focus:$('rpf').value,p_intensity:$('rpi').value?+$('rpi').value:null,p_standout:$('rps').value,p_attendees:att})})}
+      Array.prototype.forEach.call($('vr').querySelectorAll('[data-rn]'),function(d){if(!d.querySelector('[data-on]').checked)return;var fid=d.querySelector('[data-pf]').value,t=nz(d.querySelector('[data-pt]').value);if(!fid||!t){bad=true;return}
+        steps.push(function(){return rpc('fp2_coach_add_note',{p_fighter_id:fid,p_date:S.date,p_type:S.type,p_category:d.querySelector('[data-pc]').value,p_question:null,p_note:t})})});
+      Array.prototype.forEach.call($('vr').querySelectorAll('[data-rf]'),function(d){if(!d.querySelector('[data-on]').checked)return;var f=r.flags[+d.getAttribute('data-rf')];steps.push(function(){return rpc('fp6_set_flag',{p_date:S.date,p_type:S.type,p_fighter_id:f.fighter_id,p_flag:f.flag})})});
+      if($('rwc')&&$('rwc').checked)steps.push(function(){return rpc('fp6_week_note_get',{p_week:S.date}).then(function(w){var old=(w&&w.note)||'';return rpc('fp6_week_note_save',{p_week:S.date,p_note:(old?old+'\n\n':'')+$('rwt').value})})});
+      if(bad){fail(m,new Error('Välj fighter och skriv text för varje markerad anteckning, eller avmarkera den.'));return}
+      if(!steps.length){fail(m,new Error('Inget är markerat.'));return}
+      b.disabled=true;m.className='small muted';m.textContent='Sparar…';
+      steps.reduce(function(p,s){return p.then(s)},Promise.resolve()).then(function(){$('vt').value='';$('vr').innerHTML='<p class="small ok">Sparat. Det syns nu i passvyn nedan.</p>';loadPass();weekNote()}).catch(function(er){b.disabled=false;fail(m,er)});
+    };
+  }
+  $('vsort').onclick=function(){
+    stop();var t=nz($('vt').value);if(!t){fail($('vm'),new Error('Prata in eller skriv något först.'));return}
+    var b=this;b.disabled=true;b.textContent='Sorterar…';$('vm').textContent='';$('vr').innerHTML='';
+    rpc('fp3_list_fighters').then(function(a){FL=(a||[]).map(function(f){return{id:f.id,name:f.name}});return api('/functions/v1/coach_voice_sort',{text:t,fighters:FL,date:S.date,type:S.type})}).then(function(r){b.disabled=false;b.textContent='Sortera med AI';review(r)}).catch(function(er){b.disabled=false;b.textContent='Sortera med AI';fail($('vm'),new Error(er.message==='tom_text'?'Det blev för lite text.':er.message))});
+  };
 }
 function noteH(n){return '<div class="note"><q>'+esc((CN[n.category]||n.category)+(n.question?' – '+n.question:''))+'</q>'+esc(n.note)+' <button class="btn sec sm" data-rm="'+esc(n.id)+'">Ta bort</button></div>'}
 function ciHtml(r){
