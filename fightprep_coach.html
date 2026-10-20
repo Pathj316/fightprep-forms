@@ -312,26 +312,62 @@ function matchView(id){
 var TYPES=[['grappling','Grappling'],['striking','Striking'],['mma','MMA'],['wrestling','Brottning'],['styrka','Styrka'],['kondition','Kondition'],['sparring','Sparring'],['annat','Annat']];
 var TN={};TYPES.forEach(function(t){TN[t[0]]=t[1]});
 function chip(l,v){return v==null?'':'<span class="pill">'+l+' '+esc(v)+'</span>'}
+var COMBAT=[['mma','MMA'],['striking','Striking'],['grappling','Grappling'],['wrestling','Brottning'],['sparring','Sparring']];
+var CQ=[['Teknik och taktik','overall_game','Teknik och taktik'],['Fysik och mående','physical','Fysik och mående'],['Nästa steg','overall_game','Nästa steg']];
+var FLAGS=[['','Ingen flagga'],['folj_upp','Följ upp'],['prata','Prata med fightern'],['skadeoro','Skadeoro']];
+var FN={folj_upp:'Följ upp',prata:'Prata med fightern',skadeoro:'Skadeoro'};
 function passView(){
-  app.innerHTML='<h2>Pass</h2><div class="card"><div class="g2"><div><label for="pd">Datum</label><input type="date" id="pd" value="'+esc(S.date)+'"></div><div><label for="pt">Passtyp</label><select id="pt">'+opts(TYPES,S.type)+'</select></div></div></div><div id="pl"><p class="muted">Laddar…</p></div>';
-  $('pd').onchange=function(){S.date=this.value;loadPass()};$('pt').onchange=function(){S.type=this.value;loadPass()};loadPass();
+  if(!COMBAT.some(function(c){return c[0]===S.type}))S.type='mma';
+  app.innerHTML='<h2>Pass</h2><div class="card"><div class="g2"><div><label for="pd">Datum</label><input type="date" id="pd" value="'+esc(S.date)+'"></div><div><label for="pt">Passtyp</label><select id="pt">'+opts(COMBAT,S.type)+'</select></div></div><p class="small muted">Du fyller bara i de kampsportspass du är på. Missade du dagen kan du lägga in anteckningar i efterhand, eller hoppa över den.</p></div><div id="pl"><p class="muted">Laddar…</p></div><div class="card" id="wn"></div>';
+  $('pd').onchange=function(){S.date=this.value;loadPass();weekNote()};$('pt').onchange=function(){S.type=this.value;loadPass()};loadPass();weekNote();
+}
+function weekNote(){
+  var box=$('wn');if(!box)return;
+  rpc('fp6_week_note_get',{p_week:S.date}).then(function(r){
+    box.innerHTML='<h3 style="margin:0 0 6px">Veckans helhetsbild</h3><p class="small muted">Vecka från '+esc(r.week_start)+'. Vad var bäst, vad oroar dig, vem behöver extra uppmärksamhet. Gör gärna på söndagen.</p><textarea id="wnt">'+esc(r.note||'')+'</textarea><p id="wnm" class="small"></p><button class="btn sm" id="wns">Spara veckobild</button>';
+    $('wns').onclick=function(){var m=$('wnm');m.className='small muted';m.textContent='Sparar…';rpc('fp6_week_note_save',{p_week:S.date,p_note:$('wnt').value}).then(function(){m.className='small ok';m.textContent='Sparat'}).catch(function(er){fail(m,er)})};
+  }).catch(function(er){fail(box,er)});
 }
 function noteH(n){return '<div class="note"><q>'+esc((CN[n.category]||n.category)+(n.question?' – '+n.question:''))+'</q>'+esc(n.note)+' <button class="btn sec sm" data-rm="'+esc(n.id)+'">Ta bort</button></div>'}
+function ciHtml(r){
+  var h='';
+  (r.checkins||[]).forEach(function(c){
+    h+='<div class="small" style="margin-bottom:6px">'+(c.types||[]).map(function(t){return '<span class="pill">'+esc(TN[t]||t)+'</span>'}).join('')+chip('RPE',c.rpe)+(c.minutes?'<span class="pill">'+esc(c.minutes)+' min</span>':'')+(c.pain?'<span class="pill" style="color:var(--danger)">Värk'+(c.pain_location?': '+esc(c.pain_location):'')+'</span>':'')+(c.did?'<div><b>Gjorde:</b> '+esc(c.did)+'</div>':'')+(c.felt?'<div><b>Kändes:</b> '+esc(c.felt)+'</div>':'')+'</div>';
+  });
+  var d=r.daily;
+  if(d)h+='<div class="small muted">Morgonkoll: sömn '+esc(d.sleep)+'/5 · energi '+esc(d.energy)+'/5 · ömhet '+esc(d.soreness)+'/5 · stress '+esc(d.stress)+'/5'+(d.pain?' · värk'+(d.pain_location?': '+esc(d.pain_location):''):'')+'</div>';
+  return h||'<span class="muted small">Ingen incheckning från fightern.</span>';
+}
 function loadPass(){
   var box=$('pl');
-  rpc('fp2_coach_session_overview',{p_date:S.date,p_type:S.type}).then(function(res){
-    var rows=Array.isArray(res)?res:((res&&res.fighters)||[]);
+  rpc('fp6_session_load',{p_date:S.date,p_type:S.type}).then(function(res){
+    var rows=(res&&res.fighters)||[],sm=res&&res.summary||{},att=sm.attendees||[];
     if(!rows.length){box.innerHTML='<p class="muted">Inga fighters.</p>';return}
-    box.innerHTML=rows.map(function(r,i){var c=r.checkin,notes=r.notes||[];
-      var ci=c?(chip('RPE',c.rpe)+chip('Energi',c.energy)+chip('Sömn',c.sleep)+chip('Humör',c.mood)+(c.pain?'<span class="pill" style="color:var(--danger)">Värk'+(c.pain_location?': '+esc(c.pain_location):'')+'</span>':'')+(c.went_well?'<div class="small"><b>Funkade:</b> '+esc(c.went_well)+'</div>':'')+(c.work_on?'<div class="small"><b>Vill jobba på:</b> '+esc(c.work_on)+'</div>':'')):'<span class="muted small">Ingen incheckning från fightern.</span>';
-      return '<details class="card" '+(c||notes.length?'open':'')+'><summary><b>'+esc(r.name)+'</b>'+(r.injury_status?' <span class="pill">'+esc(r.injury_status)+'</span>':'')+(notes.length?' <span class="pill ok">'+notes.length+' anteckn.</span>':'')+'</summary><div>'+ci+'</div><div>'+notes.map(noteH).join('')+'</div>'+
-       '<label>Fråga</label><select data-q="'+i+'">'+S.questions.map(function(q,qi){return '<option value="'+qi+'">'+esc((CN[q.category]||q.category)+' – '+q.question)+'</option>'}).join('')+'<option value="free">Fri anteckning</option></select>'+
+    var hasSaved=!!res.summary;
+    var present=function(r){return hasSaved?att.indexOf(r.fighter_id)>=0:(r.checkins&&r.checkins.length>0)};
+    var h='<div class="card"><h3 style="margin:0 0 6px">Passet</h3>'+
+      '<label for="sf">Vad gick passet ut på?</label><textarea id="sf" style="min-height:60px">'+esc(sm.focus||'')+'</textarea>'+
+      '<label for="si">Intensitet och nivå i gruppen (1–5)</label><select id="si"><option value="">Hoppa över</option>'+[1,2,3,4,5].map(function(n){return '<option value="'+n+'"'+(sm.intensity===n?' selected':'')+'>'+n+'</option>'}).join('')+'</select>'+
+      '<label for="ss">Något som sticker ut?</label><textarea id="ss" style="min-height:60px" placeholder="Skada, bra framsteg, någon som tappade…">'+esc(sm.standout||'')+'</textarea>'+
+      '<label>Vilka var här?</label><div id="sa">'+rows.map(function(r){return '<label style="display:flex;gap:8px;align-items:center;margin:4px 0"><input type="checkbox" data-att="'+esc(r.fighter_id)+'"'+(present(r)?' checked':'')+'> '+esc(r.name)+'</label>'}).join('')+'</div>'+
+      '<p id="sm" class="small"></p><button class="btn" id="sv">Spara pass</button></div>';
+    h+=rows.map(function(r,i){var notes=r.notes||[];
+      return '<details class="card" '+(present(r)||notes.length?'open':'')+'><summary><b>'+esc(r.name)+'</b>'+(r.flag?' <span class="pill" style="color:var(--danger)">'+esc(FN[r.flag]||r.flag)+'</span>':'')+(notes.length?' <span class="pill ok">'+notes.length+' anteckn.</span>':'')+((r.checkins||[]).length?' <span class="pill">incheckad</span>':'')+'</summary>'+
+       '<div style="margin:8px 0">'+ciHtml(r)+'</div>'+
+       '<label>Flagga</label><select data-fl="'+i+'">'+opts(FLAGS,r.flag||'')+'</select><span data-fm="'+i+'" class="small"></span>'+
+       '<div>'+notes.map(noteH).join('')+'</div>'+
+       '<label>Anteckning</label><select data-q="'+i+'">'+CQ.map(function(q,qi){return '<option value="'+qi+'">'+esc(q[0])+'</option>'}).join('')+'<option value="free">Fri anteckning</option></select>'+
        '<div data-cw="'+i+'" hidden><label>Kategori</label><select data-c="'+i+'">'+opts(CATS,'striking')+'</select></div>'+
-       '<textarea data-t="'+i+'" style="margin-top:8px" placeholder="Anteckning…"></textarea><div class="row" style="margin-top:6px"><button class="btn sm" data-add="'+i+'">Spara</button><span data-m="'+i+'" class="small"></span></div></details>'}).join('');
-    box.onchange=function(e){var i=e.target.getAttribute('data-q');if(i!==null)box.querySelector('[data-cw="'+i+'"]').hidden=e.target.value!=='free'};
+       '<textarea data-t="'+i+'" style="margin-top:8px" placeholder="Skriv fritt (valfritt)…"></textarea><div class="row" style="margin-top:6px"><button class="btn sm" data-add="'+i+'">Spara anteckning</button><span data-m="'+i+'" class="small"></span></div></details>'}).join('');
+    box.innerHTML=h;
+    $('sv').onclick=function(){var a=[];Array.prototype.forEach.call(box.querySelectorAll('[data-att]'),function(c){if(c.checked)a.push(c.getAttribute('data-att'))});var m=$('sm');m.className='small muted';m.textContent='Sparar…';
+      rpc('fp6_session_save',{p_date:S.date,p_type:S.type,p_focus:$('sf').value,p_intensity:$('si').value?+$('si').value:null,p_standout:$('ss').value,p_attendees:a}).then(function(){m.className='small ok';m.textContent='Sparat'}).catch(function(er){fail(m,er)})};
+    box.onchange=function(e){var t=e.target,q=t.getAttribute('data-q'),f=t.getAttribute('data-fl');
+      if(q!==null)box.querySelector('[data-cw="'+q+'"]').hidden=t.value!=='free';
+      if(f!==null){var fm=box.querySelector('[data-fm="'+f+'"]');fm.className='small muted';fm.textContent=' sparar…';rpc('fp6_set_flag',{p_date:S.date,p_type:S.type,p_fighter_id:rows[+f].fighter_id,p_flag:t.value||null}).then(function(){fm.className='small ok';fm.textContent=' sparad'}).catch(function(er){fail(fm,er)})}};
     box.onclick=function(e){var a=e.target.getAttribute('data-add'),d=e.target.getAttribute('data-rm');
       if(a!==null){a=+a;var sel=box.querySelector('[data-q="'+a+'"]'),ta=box.querySelector('[data-t="'+a+'"]'),m=box.querySelector('[data-m="'+a+'"]'),t=nz(ta.value);if(!t){fail(m,new Error('Skriv något först'));return}
-        var cat,q=null;if(sel.value==='free'){cat=box.querySelector('[data-c="'+a+'"]').value}else{var qq=S.questions[+sel.value];cat=qq.category;q=qq.question}
+        var cat,q=null;if(sel.value==='free'){cat=box.querySelector('[data-c="'+a+'"]').value}else{var qq=CQ[+sel.value];cat=qq[1];q=qq[2]}
         m.className='small muted';m.textContent='Sparar…';
         rpc('fp2_coach_add_note',{p_fighter_id:rows[a].fighter_id,p_date:S.date,p_type:S.type,p_category:cat,p_question:q,p_note:t}).then(loadPass).catch(function(er){fail(m,er)})}
       else if(d){e.target.disabled=true;rpc('fp2_coach_remove_note',{p_id:d}).then(loadPass).catch(function(er){alert(er.message)})}};
