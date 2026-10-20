@@ -211,6 +211,15 @@ function analysisCard(id){
       api('/functions/v1/coach_analysis',{fighter_id:id,from:from,to:to,label:lab}).then(function(){analysisCard(id)}).catch(function(er){b.disabled=false;b.textContent='Analysera';fail($('am'),new Error(er.message==='ingen_data'?'Inget inlagt under den perioden.':er.message))})};
   }).catch(function(er){fail(box,er)});
 }
+var ARCH_SV={anti_wrestling_striker:['Anti-brottnings-striker','Försvarar takedowns och straffar misslyckade försök.'],cage_control_grinder:['Burkontroll / grinder','Kontroll mot staketet med tryck och låg risk.'],chain_wrestler:['Kedjebrottare','Flödande brottning med kedjor av takedowns.'],counter_striker:['Kontrastriker','Lockar fram anfall och straffar med precision.'],gnp_finisher:['Ground & pound-avslutare','Toppkontroll med slag och armbågar mot avslut.'],pressure_boxer:['Pressboxare','Går framåt med volym och kombinationer.'],pressure_wrestler:['Pressbrottare','Ihållande takedown-tryck och toppkontroll som tröttar ut.'],scramble_specialist:['Scramble-specialist','Trivs i kaos, övergångar och reversals.'],submission_hunter:['Submission-jägare','Jagar avslut med kedjor av submissions.'],tempo_controller:['Tempokontrollant','Styr tempo, timing och rondernas struktur.']};
+var ARCH_LV=[[0,'Inte alls'],[3,'Lite'],[6,'Tydligt'],[9,'Dominant']];
+function archHtml(sc){
+  var cur={};(sc||[]).forEach(function(x){var k=x.archetype_slug||x.slug;if(!k){(S.archetypes||[]).forEach(function(a){if(a.name===x.archetype_name||a.display_name===x.archetype_name)k=a.slug})}if(k)cur[k]=Number(x.score)});
+  var list=(S.archetypes&&S.archetypes.length?S.archetypes.map(function(a){return a.slug}):Object.keys(ARCH_SV));
+  return list.map(function(k){var sv=ARCH_SV[k]||[k,''],v=cur[k]||0,near=ARCH_LV.reduce(function(b,l){return Math.abs(l[0]-v)<Math.abs(b[0]-v)?l:b},ARCH_LV[0]);
+    var optsH=ARCH_LV.map(function(l){return '<option value="'+l[0]+'"'+(l[0]===near[0]?' selected':'')+'>'+l[1]+'</option>'}).join('');
+    return '<div style="border-top:1px solid var(--border);padding:8px 0"><b>'+esc(sv[0])+'</b><div class="small muted">'+esc(sv[1])+'</div><select data-arch="'+esc(k)+'" data-was="'+near[0]+'" style="margin-top:4px">'+optsH+'</select></div>'}).join('');
+}
 function fighterView(id){
   app.innerHTML='<p class="muted">Laddar…</p>';
   rpc('fp3_get_fighter',{p_id:id}).then(function(d){
@@ -226,8 +235,7 @@ function fighterView(id){
      '<div class="card"><h3 style="margin-top:0">Anteckningar</h3><div id="nl">'+(notes.map(function(n){return '<div class="note"><q>'+esc(CN[n.category]||n.category)+(n.match_label?' · '+esc(n.match_label):'')+'</q>'+esc(n.note)+' <button class="btn sec sm" data-rm="'+esc(n.id)+'">Ta bort</button></div>'}).join('')||'<p class="muted small">Inga.</p>')+'</div>'+
      '<label>Kategori</label><select id="nc">'+opts(CATS,'striking')+'</select><label>Match (valfritt)</label><input id="nm"><label>Anteckning</label><textarea id="nt"></textarea><p id="m1" class="small"></p><button class="btn" id="na">Lägg till</button></div>'+
      '<div class="card"><h3 style="margin-top:0">Incheckningslänk</h3><p class="small muted">Personlig länk fightern använder efter varje pass. Visas bara en gång.</p><label>Adress till fighter_checkin.html</label><input id="lb" type="url" value="'+esc(ls('fp3_base')||'')+'"><p id="lo" class="small"></p><div class="row"><button class="btn sm" id="lc">Skapa ny länk</button><button class="btn sec sm" id="lr">Stäng av länk</button><button class="btn sec sm" id="ls">Sammanställning</button></div></div>'+
-     '<div class="card"><h3 style="margin-top:0">Arketyper</h3>'+(sc.map(function(s){return '<span class="pill">'+esc(s.archetype_name)+' '+esc(s.score)+'</span>'}).join('')||'<p class="muted small">Inga poäng.</p>')+
-     '<div class="g2"><div><label>Arketyp</label><select id="ar">'+opts(S.archetypes.map(function(a){return[a.slug,a.name]}),'')+'</select></div><div><label>Poäng</label><input id="as" type="number" step="any" inputmode="decimal"></div></div><p id="m2" class="small"></p><button class="btn sec" id="ab">Sätt poäng</button></div>';
+     '<div class="card" id="arc"><h3 style="margin-top:0">Arketyper</h3><p class="small muted">En fighter kan ha flera. Välj hur tydligt varje arketyp passar. Hoppa över de som inte passar.</p>'+archHtml(sc)+'<p id="m2" class="small"></p><button class="btn" id="ab">Spara arketyper</button></div>';
     app.innerHTML=h;
     $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};profileCard(id);weeklyCard(id);analysisCard(id);
     $('dl').onclick=function(){if(confirm('Radera '+f.name+' och all kopplad data?'))rpc('fp3_delete_fighter',{p_id:id}).then(function(){S.view=null;render()}).catch(function(er){alert(er.message)})};
@@ -238,7 +246,9 @@ function fighterView(id){
       rpc('fp2_coach_create_link',{p_fighter_id:id}).then(function(t){var tok=typeof t==='string'?t:(t&&t.token)||'';var link=base.replace(/#.*$/,'')+'#t='+tok;$('lo').className='small';$('lo').innerHTML='<b class="ok">Länk (visas bara nu):</b><br><span id="lk" style="word-break:break-all"></span><br><button class="btn sm" id="cp" style="margin-top:6px">Kopiera</button>';$('lk').textContent=link;
         $('cp').onclick=function(){(navigator.clipboard?navigator.clipboard.writeText(link):Promise.reject()).then(function(){$('cp').textContent='Kopierad ✓'}).catch(function(){var r=document.createRange();r.selectNodeContents($('lk'));var g=getSelection();g.removeAllRanges();g.addRange(r)})}}).catch(function(er){fail($('lo'),er)})};
     $('lr').onclick=function(){if(confirm('Stäng av länken?'))rpc('fp2_coach_revoke_link',{p_fighter_id:id}).then(function(){$('lo').className='small ok';$('lo').textContent='Länken är avstängd.'}).catch(function(er){fail($('lo'),er)})};
-    $('ab').onclick=function(){var v=num($('as').value);if(!$('ar').value||v==null){fail($('m2'),new Error('Välj arketyp och poäng'));return}rpc('fp3_set_fighter_archetype_score',{p_fighter_id:id,p_archetype_slug:$('ar').value,p_score:v,p_source:'coach_assigned'}).then(function(){fighterView(id)}).catch(function(er){fail($('m2'),er)})};
+    $('ab').onclick=function(){var jobs=[],rows=document.querySelectorAll('[data-arch]');Array.prototype.forEach.call(rows,function(r){var slug=r.getAttribute('data-arch'),v=Number(r.value),was=Number(r.getAttribute('data-was')||0);if(v!==was)jobs.push(rpc('fp3_set_fighter_archetype_score',{p_fighter_id:id,p_archetype_slug:slug,p_score:v,p_source:'coach_assigned'}))});
+      if(!jobs.length){$('m2').className='small muted';$('m2').textContent='Inget ändrat';return}
+      $('m2').className='small muted';$('m2').textContent='Sparar…';Promise.all(jobs).then(function(){fighterView(id)}).catch(function(er){fail($('m2'),er)})};
   }).catch(function(er){app.innerHTML='<p class="err">'+esc(er.message)+'</p>'});
 }
 
