@@ -165,7 +165,7 @@ function teamCard(){
      '<label for="tp">Period</label><select id="tp"><option value="7">Senaste 7 dagarna</option><option value="30" selected>Senaste 30 dagarna</option><option value="90">Senaste 3 månaderna</option><option value="365">Senaste året</option><option value="all">Allt som finns</option><option value="custom">Eget intervall…</option></select>'+
      '<div id="tc" class="g2" hidden><div><label for="tf">Från</label><input id="tf" type="date"></div><div><label for="tt">Till</label><input id="tt" type="date" value="'+today()+'"></div></div>'+
      '<p id="tmsg" class="small"></p><button class="btn" id="tb">Analysera laget</button><div style="margin-top:12px">'+
-     (a.map(function(x){return '<div class="note"><q>'+esc(x.label||'')+' · '+esc(x.period_from)+' → '+esc(x.period_to)+' · körd '+esc(String(x.created_at).slice(0,10))+'</q>'+VZ.render(x.summary)+'</div>'}).join('')||'<p class="muted small">Inga lagsanalyser än.</p>')+'</div>';
+     (a.map(function(x,i){return VZ.hist((x.label||'')+' · '+x.period_from+' → '+x.period_to+' · körd '+String(x.created_at).slice(0,10),x.summary,i===0)}).join('')||'<p class="muted small">Inga lagsanalyser än.</p>')+'</div>';
     $('tp').onchange=function(){$('tc').hidden=this.value!=='custom'};
     $('tb').onclick=function(){var v=$('tp').value,to=today(),from,lab=$('tp').options[$('tp').selectedIndex].text;
       if(v==='custom'){from=$('tf').value;to=$('tt').value;lab='Eget intervall';if(!from||!to){fail($('tmsg'),new Error('Välj från- och tilldatum'));return}}
@@ -438,14 +438,15 @@ var VZ = (function () {
     if (String(str).charAt(0) === '{') return '<p class="vz-note">Analysen gick inte att visa. Kör den igen.</p>';
     return '<div class="vz-legacy">' + lite(String(str)) + '</div>';
   }
-  return { render: render };
+  function hist(title, summary, open) { return '<details class="vz-card vz-hist"' + (open ? ' open' : '') + '><summary><h3>' + esc(title) + '</h3></summary><div class="vz-body">' + render(summary) + '</div></details>'; }
+  return { render: render, hist: hist };
 }());
 
 function mdLite(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>')}
 function weeklyCard(id){
   var box=$('wk');if(!box)return;
   rpc('fp3_list_summaries',{p_fighter_id:id}).then(function(a){a=a||[];
-    box.innerHTML='<div class="row" style="justify-content:space-between"><h3 style="margin:0">Veckosammanfattning</h3><div class="row"><button class="btn sec sm" id="wp">Förhandsvisa fighterns analys</button><button class="btn sm" id="wb">Sammanfatta veckan</button></div></div><div id="wpv"></div><p class="small muted">Kör när du vill. Gäller senaste 7 dagarna. Skriven av AI utifrån incheckningar och dina anteckningar. Fightern har en egen veckoanalys i sin länk (en per vecka, från söndag kl 20).</p><p id="wm" class="small"></p><div id="wl">'+(a.map(function(x){return '<div class="note"><q>'+esc(String(x.created_at||x.week_start).slice(0,10))+' (från '+esc(x.week_start)+')</q>'+VZ.render(x.summary)+'</div>'}).join('')||'<p class="muted small">Inga än.</p>')+'</div>';
+    box.innerHTML='<div class="row" style="justify-content:space-between"><h3 style="margin:0">Veckosammanfattning</h3><div class="row"><button class="btn sec sm" id="wp">Förhandsvisa fighterns analys</button><button class="btn sm" id="wb">Sammanfatta veckan</button></div></div><div id="wpv"></div><p class="small muted">Kör när du vill. Gäller senaste 7 dagarna. Skriven av AI utifrån incheckningar och dina anteckningar. Fightern har en egen veckoanalys i sin länk (en per vecka, från söndag kl 20).</p><p id="wm" class="small"></p><div id="wl">'+(a.map(function(x,i){return VZ.hist(String(x.created_at||x.week_start).slice(0,10)+' (från '+x.week_start+')',x.summary,i===0)}).join('')||'<p class="muted small">Inga än.</p>')+'</div>';
     $('wp').onclick=function(){var b=$('wp');b.disabled=true;b.textContent='Skriver…';$('wm').textContent='';
       api('/functions/v1/coach_weekly',{fighter_id:id,preview_fighter:true}).then(function(x){b.disabled=false;b.textContent='Förhandsvisa fighterns analys';$('wpv').innerHTML='<div class="note"><q>Så ser fighterns analys ut (förhandsvisning, sparas inte) · '+esc(x.week_start)+' till '+esc(x.week_end)+'</q>'+VZ.render(x.summary)+'</div>'}).catch(function(er){b.disabled=false;b.textContent='Förhandsvisa fighterns analys';fail($('wm'),new Error(er.message==='ingen_data'?'Inget inlagt de senaste 7 dagarna.':er.message))})};
     $('wb').onclick=function(){var b=$('wb');b.disabled=true;b.textContent='Skriver…';$('wm').textContent='';
@@ -460,7 +461,7 @@ function analysisCard(id){
      '<label for="ap">Period</label><select id="ap"><option value="30">Senaste 30 dagarna</option><option value="90">Senaste 3 månaderna</option><option value="180">Senaste 6 månaderna</option><option value="365">Senaste året</option><option value="all">Allt som finns</option><option value="custom">Eget intervall…</option></select>'+
      '<div id="ac" class="g2" hidden><div><label for="af">Från</label><input id="af" type="date"></div><div><label for="at">Till</label><input id="at" type="date" value="'+today()+'"></div></div>'+
      '<p id="am" class="small"></p><button class="btn" id="ab2">Analysera</button><div id="al" style="margin-top:12px">'+
-     (a.map(function(x){return '<div class="note"><q>'+esc(x.label||'')+' · '+esc(x.period_from)+' → '+esc(x.period_to)+' · körd '+esc(String(x.created_at).slice(0,10))+'</q>'+VZ.render(x.summary)+'</div>'}).join('')||'<p class="muted small">Inga analyser än.</p>')+'</div>';
+     (a.map(function(x,i){return VZ.hist((x.label||'')+' · '+x.period_from+' → '+x.period_to+' · körd '+String(x.created_at).slice(0,10),x.summary,i===0)}).join('')||'<p class="muted small">Inga analyser än.</p>')+'</div>';
     $('ap').onchange=function(){$('ac').hidden=this.value!=='custom'};
     $('ab2').onclick=function(){var v=$('ap').value,to=today(),from,lab=$('ap').options[$('ap').selectedIndex].text;
       if(v==='custom'){from=$('af').value;to=$('at').value;lab='Eget intervall';if(!from||!to){fail($('am'),new Error('Välj från- och tilldatum'));return}}

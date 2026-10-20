@@ -345,7 +345,8 @@ var VZ = (function () {
     if (String(str).charAt(0) === '{') return '<p class="vz-note">Analysen gick inte att visa. Kör den igen.</p>';
     return '<div class="vz-legacy">' + lite(String(str)) + '</div>';
   }
-  return { render: render };
+  function hist(title, summary, open) { return '<details class="vz-card vz-hist"' + (open ? ' open' : '') + '><summary><h3>' + esc(title) + '</h3></summary><div class="vz-body">' + render(summary) + '</div></details>'; }
+  return { render: render, hist: hist };
 }());
 
   function fmt(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
@@ -493,10 +494,10 @@ var VZ = (function () {
     return post('/functions/v1/fighter_weekly', { token: token, mode: mode }).catch(function (e) { throw e; });
   }
   function renderWeek() {
-    shell('<div class="card" id="wk"><p class="sub" style="margin:0">Laddar…</p></div><div class="card"><h2>Tidigare analyser</h2>' + (ctx.analyses.length ? ctx.analyses.map(function (a) { return '<div style="border-top:1px solid var(--border);padding:10px 0"><b>Vecka från ' + esc(a.week_start) + '</b><div class="txt">' + VZ.render(a.summary) + '</div></div>'; }).join('') : '<p class="sub" style="margin:0">Inga än.</p>') + '</div>');
+    shell('<div class="card" id="wk"><p class="sub" style="margin:0">Laddar…</p></div><div class="card"><h2>Tidigare analyser</h2>' + (ctx.analyses.length ? ctx.analyses.map(function (a) { return '<div data-wk="' + esc(a.week_start) + '">' + VZ.hist('Vecka från ' + a.week_start, a.summary, false) + '</div>'; }).join('') : '<p class="sub" style="margin:0">Inga än.</p>') + '</div>');
     var box = $('wk');
     function draw(j) {
-      if (j.summary) { box.innerHTML = '<h2>Din veckoanalys</h2><p class="sub" style="margin:0 0 10px">' + esc(j.week_start) + ' till ' + esc(j.week_end) + '</p><div class="txt">' + VZ.render(j.summary) + '</div>'; return; }
+      if (j.summary) { var dup = document.querySelector('[data-wk="' + j.week_start + '"]'); if (dup) dup.remove(); box.innerHTML = '<h2>Din veckoanalys</h2><p class="sub" style="margin:0 0 10px">' + esc(j.week_start) + ' till ' + esc(j.week_end) + '</p><div class="txt">' + VZ.render(j.summary) + '</div>'; return; }
       box.innerHTML = '<h2>Din veckoanalys</h2><p class="sub" style="margin:0 0 12px">Få en analys av din vecka (' + esc(j.week_start) + ' till ' + esc(j.week_end) + '). Den bygger på det du fyllt i. Du kan göra en per vecka, från söndag kl 20.</p><button class="btn" type="button" id="wgo">Skapa min veckoanalys</button><p class="err" id="werr" hidden></p>';
       $('wgo').onclick = function () {
         var b = this; b.disabled = true; b.textContent = 'Skriver…';
