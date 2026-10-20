@@ -95,6 +95,21 @@ h2{font-size:1.1rem;margin:0 0 8px}
 .vz-s{font-weight:700}
 .vz-sw{padding:1px 6px;border-radius:6px}.vz-sw.ok{background:rgba(31,157,107,.16)}.vz-sw.mid{background:rgba(217,154,6,.22)}.vz-sw.bad{background:rgba(214,58,84,.24)}
 .vz-legacy{line-height:1.5}
+
+.vz-card>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px}
+.vz-card>summary::-webkit-details-marker{display:none}
+.vz-card>summary::after,.vz-sub>summary::after{content:'▾';color:var(--muted,#586272);transition:transform .15s}
+.vz-card:not([open])>summary::after,.vz-sub:not([open])>summary::after{transform:rotate(-90deg)}
+.vz-card>summary h3{margin:0}
+.vz-body{margin-top:10px}
+.vz-sub{border-top:1px solid var(--border,#d5dbe3);padding:8px 0}
+.vz-sub>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px;min-height:30px;align-items:center}
+.vz-sub>summary::-webkit-details-marker{display:none}
+.vz-sub .vz-body{margin-top:6px}
+.vz-sub.work{border-left:3px solid #d99a06;padding-left:8px}
+.vz-tg{margin:0 0 10px;text-align:right}
+.vz-btn{background:transparent;border:1px solid var(--border,#d5dbe3);color:inherit;border-radius:8px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer;min-height:36px}
+.vz-card p+p{margin-top:8px}
 </style>
 </head>
 <body>
@@ -228,8 +243,17 @@ var VZ = (function () {
     return '<div class="vz-pl">' + passes.slice(-14).map(function (p) { return '<div class="vz-pr"><span class="vz-pd">' + wd(p.date) + ' ' + dm(p.date) + '</span><span>' + (p.types || []).map(tag).join('') + '</span><span class="vz-rpe" title="RPE ' + esc(p.rpe) + ' av 10"><i style="width:' + (p.rpe * 10) + '%"></i></span><span class="vz-pm">' + (p.minutes ? esc(p.minutes) + ' min' : '') + ' · RPE ' + esc(p.rpe) + '</span></div>'; }).join('') + '</div><p class="vz-note">Längden på det röda strecket visar hur tungt passet var (RPE av 10).</p>';
   }
 
-  function card(title, body, cls) { return body ? '<div class="vz-card ' + (cls || '') + '"><h3>' + esc(title) + '</h3>' + body + '</div>' : ''; }
-  function p(t) { return t ? '<p>' + lite(t) + '</p>' : ''; }
+  function card(title, body, cls, open) { return body ? '<details class="vz-card ' + (cls || '') + '"' + (open ? ' open' : '') + '><summary><h3>' + esc(title) + '</h3></summary><div class="vz-body">' + body + '</div></details>' : ''; }
+  function toggle() { return '<div class="vz-tg"><button type="button" class="vz-btn" onclick="var d=this.closest(\'.vz\').querySelectorAll(\'details.vz-card\');var o=this.getAttribute(\'data-o\')!==\'1\';for(var i=0;i<d.length;i++)d[i].open=o;this.setAttribute(\'data-o\',o?\'1\':\'0\');this.textContent=o?\'Stäng alla delar\':\'Öppna alla delar\'">Öppna alla delar</button></div>'; }
+  function p(t) {
+    if (!t) return '';
+    var ss = String(t).match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) || [String(t)];
+    if (String(t).length < 260 || ss.length < 3) return '<p>' + lite(t) + '</p>';
+    var out = '', i;
+    for (i = 0; i < ss.length; i += 2) out += '<p>' + lite((ss[i] + (ss[i + 1] || '')).trim()) + '</p>';
+    return out;
+  }
+  function sub(title, inner, cls) { return '<details class="vz-sub ' + (cls || '') + '"><summary>' + title + '</summary><div class="vz-body">' + inner + '</div></details>'; }
   function items(arr, cls) {
     if (!arr || !arr.length) return '';
     return arr.map(function (x) { return '<div class="vz-it ' + (cls || '') + '"><b>' + esc(x.punkt || x.rubrik || '') + '</b>' + (x.varfor ? '<div class="vz-why">Därför: ' + esc(x.varfor) + '</div>' : '') + (x.text ? '<div>' + esc(x.text) + '</div>' : '') + '</div>'; }).join('');
@@ -240,38 +264,38 @@ var VZ = (function () {
     var ai = a.ai || {}, c = a.charts || {}, k = ai.kroppen || {}, lv = LV[k.niva] || LV.info;
     var h = '<div class="vz">';
     if (ai.rubrik) h += '<h2 class="vz-h">' + esc(ai.rubrik) + '</h2>';
-    h += card('Kort sagt', p(ai.sammanfattning), 'info');
-    h += tiles(c.current, c.previous);
-    h += card('Din träning per dag', stackedBars(c.days));
-    h += card('Dina pass', passRows(c.passes));
+    h += toggle();
+    h += card('Kort sagt', p(ai.sammanfattning), 'info', true);
+    if (c.current) h += tiles(c.current, c.previous);
+    h += card('Din träning per dag', stackedBars(c.days), '', true);
+    h += card('Det här funkar', items(ai.funkar), 'good', true);
+    h += card('Det här kan du jobba på', items(ai.jobba_pa), 'work', true);
     h += card('Hur kroppen mår', (k.text ? '<div class="vz-chip ' + lv[0] + '">' + lv[1] + '</div>' + p(k.text) : '') + wellness(c.wellness), lv[0]);
-    h += card('Det här funkar', items(ai.funkar), 'good');
-    h += card('Det här kan du jobba på', items(ai.jobba_pa), 'work');
-    h += card('Inför nästa vecka', p(ai.nasta_vecka), 'info');
+    h += card('Dina pass', passRows(c.passes));
+    h += card('Inför nästa vecka', p(ai.nasta_vecka), 'info', true);
     return h + '</div>';
   }
 
   function coach(a) {
     var ai = a.ai || {}, c = a.charts || {}, h = '<div class="vz">';
-    h += card('Sammanfattning', p(ai.sammanfattning), 'info');
-    if (ai.nyckelfynd && ai.nyckelfynd.length) h += '<div class="vz-card"><h3>Viktigast just nu</h3>' + ai.nyckelfynd.map(function (x) { var l = LV[x.niva] || LV.info; return '<div class="vz-it ' + l[0] + '"><span class="vz-chip ' + l[0] + '">' + l[1] + '</span> <b>' + esc(x.rubrik) + '</b><div>' + esc(x.text) + '</div></div>'; }).join('') + '</div>';
-    h += tiles(c.current, c.previous);
-    h += card('Träning per dag', stackedBars(c.days));
+    h += toggle();
+    h += card('Sammanfattning', p(ai.sammanfattning), 'info', true);
+    if (ai.nyckelfynd && ai.nyckelfynd.length) h += card('Viktigast just nu', ai.nyckelfynd.map(function (x) { var l = LV[x.niva] || LV.info; return '<div class="vz-it ' + l[0] + '"><span class="vz-chip ' + l[0] + '">' + l[1] + '</span> <b>' + esc(x.rubrik) + '</b><div>' + esc(x.text) + '</div></div>'; }).join(''), '', true);
+    if (c.current) h += tiles(c.current, c.previous);
+    h += card('Träning per dag', stackedBars(c.days), '', true);
     h += card('Belastning per vecka', weekBars(c.weeks));
     h += card('Vad träningen bestod av', typeBars(c.types));
     h += card('Mående över tid', wellness(c.wellness));
-    h += card('Belastning', p(ai.belastning));
-    h += card('Mående', p(ai.maende));
-    h += card('Skador och värk', p(ai.skador), ai.skador ? 'warn' : '');
-    h += card('Teman', p(ai.teman));
-    h += card('Styrkor och svagheter', p(ai.styrkor_svagheter));
-    if (ai.lager && ai.lager.length) h += card('Lagren, översatta', ai.lager.map(function (x) { return '<div class="vz-it"><b>' + esc(x.rubrik) + '</b><div>' + esc(x.betydelse) + '</div>' + (x.jamfort_med ? '<div class="vz-why">Jämfört med: ' + esc(x.jamfort_med) + '</div>' : '') + '</div>'; }).join(''));
+    var tx = '';
+    [['Belastning', ai.belastning], ['Mående', ai.maende], ['Skador och värk', ai.skador], ['Teman', ai.teman], ['Styrkor och svagheter', ai.styrkor_svagheter]].forEach(function (z) { if (z[1]) tx += sub(esc(z[0]), p(z[1])); });
+    h += card('Tolkning i text', tx);
+    if (ai.lager && ai.lager.length) h += card('Lagren, översatta', ai.lager.map(function (x) { return sub(esc(x.rubrik), '<p>' + esc(x.betydelse) + '</p>' + (x.jamfort_med ? '<div class="vz-why">Jämfört med: ' + esc(x.jamfort_med) + '</div>' : '')); }).join(''));
     var tp = ai.traningsupplagg;
     if (tp) {
       var rows = (tp.veckomall || []).map(function (r) { return '<tr><td><b>' + esc(r.dag) + '</b></td><td>' + esc(r.pass) + '</td><td>' + esc(r.intensitet) + '</td><td>' + esc(r.innehall) + (r.varfor ? '<div class="vz-why">' + esc(r.varfor) + '</div>' : '') + '</td></tr>'; }).join('');
-      h += card('Förslag på träningsupplägg', p(tp.mal) + (rows ? '<div class="vz-sc"><table class="vz-t"><thead><tr><th>Dag</th><th>Pass</th><th>Tyngd</th><th>Innehåll</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '') + p(tp.justeringar) + '<p class="vz-note">Förslag att bedöma själv. De bygger på profil, svagheter, skador och lagren, inte på att AI:n har sett fightern träna.</p>', 'work');
+      h += card('Förslag på träningsupplägg', p(tp.mal) + (rows ? '<div class="vz-sc"><table class="vz-t"><thead><tr><th>Dag</th><th>Pass</th><th>Tyngd</th><th>Innehåll</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '') + (tp.justeringar ? sub('Justeringar om något avviker', p(tp.justeringar)) : '') + '<p class="vz-note">Förslag att bedöma själv. De bygger på profil, svagheter, skador och lagren, inte på att AI:n har sett fightern träna.</p>', 'work', true);
     }
-    if (ai.drillar && ai.drillar.length) h += card('Förslag på drillar', ai.drillar.map(function (d) { return '<div class="vz-it work"><b>' + esc(d.namn) + '</b>' + (d.syfte ? '<div>Syfte: ' + esc(d.syfte) + '</div>' : '') + (d.upplagg ? '<div>Upplägg: ' + esc(d.upplagg) + '</div>' : '') + (d.coachpunkter ? '<div>Titta på: ' + esc(d.coachpunkter) + '</div>' : '') + (d.koppling ? '<div class="vz-why">Kopplat till: ' + esc(d.koppling) + '</div>' : '') + '</div>'; }).join(''), 'work');
+    if (ai.drillar && ai.drillar.length) h += card('Förslag på drillar', ai.drillar.map(function (d) { return sub('<b>' + esc(d.namn) + '</b>', (d.syfte ? '<p><b>Syfte:</b> ' + esc(d.syfte) + '</p>' : '') + (d.upplagg ? '<p><b>Upplägg:</b> ' + esc(d.upplagg) + '</p>' : '') + (d.coachpunkter ? '<p><b>Titta på:</b> ' + esc(d.coachpunkter) + '</p>' : '') + (d.koppling ? '<div class="vz-why">Kopplat till: ' + esc(d.koppling) + '</div>' : ''), 'work'); }).join(''), 'work', true);
     if (ai.saknas && ai.saknas.length) h += card('Det här saknas i underlaget', '<ul>' + ai.saknas.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>');
     return h + '</div>';
   }
@@ -290,21 +314,35 @@ var VZ = (function () {
   }
   function team(a) {
     var ai = a.ai || {}, t = a.table || [];
-    var h = '<div class="vz">' + card('Sammanfattning', p(ai.sammanfattning), 'info');
-    if (t.length) h += '<div class="vz-card"><h3>Laget i en tabell</h3><div class="vz-sc"><table class="vz-t vz-team"><thead><tr><th>Fighter</th><th>Pass</th><th>Belastning</th><th>Sömn</th><th>Energi</th><th>Ömhet</th><th>Stress</th><th>Värk</th><th>Vikt</th><th>Flagga</th><th>Senast aktiv</th></tr></thead><tbody>' + t.map(teamRow).join('') + '</tbody></table></div>' +
-      '<p class="vz-note"><span class="vz-sw ok">✓ grön</span> inget att göra · <span class="vz-sw mid">! gul</span> håll koll · <span class="vz-sw bad">✕ röd</span> följ upp nu · – saknas data.<br>Belastning jämförs med föregående period av samma längd (gul över +30 %, röd över +50 %). Sömn och energi är snitt 1–5 (gul 3,2 eller lägre, röd 2,5 eller lägre). Ömhet och stress är snitt 1–5 där högt är sämre (gul 3,3 eller mer, röd 4 eller mer). Värk visar antal dagar. Vikten gul vid mer än 2 kg förändring.</p></div>';
+    var h = '<div class="vz">' + toggle() + card('Sammanfattning', p(ai.sammanfattning), 'info', true);
+    if (t.length) h += '<details class="vz-card" open><summary><h3>Laget i en tabell</h3></summary><div class="vz-body"><div class="vz-sc"><table class="vz-t vz-team"><thead><tr><th>Fighter</th><th>Pass</th><th>Belastning</th><th>Sömn</th><th>Energi</th><th>Ömhet</th><th>Stress</th><th>Värk</th><th>Vikt</th><th>Flagga</th><th>Senast aktiv</th></tr></thead><tbody>' + t.map(teamRow).join('') + '</tbody></table></div>' +
+      '<p class="vz-note"><span class="vz-sw ok">✓ grön</span> inget att göra · <span class="vz-sw mid">! gul</span> håll koll · <span class="vz-sw bad">✕ röd</span> följ upp nu · – saknas data.<br>Belastning jämförs med föregående period av samma längd (gul över +30 %, röd över +50 %). Sömn och energi är snitt 1–5 (gul 3,2 eller lägre, röd 2,5 eller lägre). Ömhet och stress är snitt 1–5 där högt är sämre (gul 3,3 eller mer, röd 4 eller mer). Värk visar antal dagar. Vikten gul vid mer än 2 kg förändring.</p></div></details>';
     h += card('Teman i laget', p(ai.teman));
-    if (ai.fighters && ai.fighters.length) h += card('Per fighter', ai.fighters.map(function (f) { return '<div class="vz-it"><b>' + esc(f.namn) + '</b><div>' + esc(f.kommentar) + '</div></div>'; }).join(''));
-    if (ai.folj_upp && ai.folj_upp.length) h += card('Att följa upp nu', ai.folj_upp.map(function (f) { return '<div class="vz-it warn"><b>' + esc(f.fighter) + '</b><div>' + esc(f.varfor) + '</div>' + (f.forslag ? '<div class="vz-why">Förslag: ' + esc(f.forslag) + '</div>' : '') + '</div>'; }).join(''), 'warn');
+    if (ai.fighters && ai.fighters.length) h += card('Per fighter', ai.fighters.map(function (f) { return sub('<b>' + esc(f.namn) + '</b>', '<p>' + esc(f.kommentar) + '</p>'); }).join(''), '', true);
+    if (ai.folj_upp && ai.folj_upp.length) h += card('Att följa upp nu', ai.folj_upp.map(function (f) { return '<div class="vz-it warn"><b>' + esc(f.fighter) + '</b><div>' + esc(f.varfor) + '</div>' + (f.forslag ? '<div class="vz-why">Förslag: ' + esc(f.forslag) + '</div>' : '') + '</div>'; }).join(''), 'warn', true);
     if (ai.saknas && ai.saknas.length) h += card('Det här saknas i underlaget', '<ul>' + ai.saknas.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>');
     return h + '</div>';
   }
 
+  function repair(str) {
+    var a = str.indexOf('{'); if (a < 0) return null; var s = str.slice(a), b = s.lastIndexOf('}');
+    try { return JSON.parse(s.slice(0, b + 1)); } catch (e) { }
+    var st = [], inS = false, esc2 = false, c = [], i, ch;
+    for (i = 0; i < s.length; i++) {
+      ch = s[i];
+      if (inS) { if (esc2) esc2 = false; else if (ch === '\\') esc2 = true; else if (ch === '"') inS = false; continue; }
+      if (ch === '"') inS = true; else if (ch === '{') st.push('}'); else if (ch === '[') st.push(']'); else if (ch === '}' || ch === ']') st.pop(); else if (ch === ',') c.push([i, st.slice().reverse().join('')]);
+    }
+    for (i = c.length - 1; i >= Math.max(0, c.length - 60); i--) { try { return JSON.parse(s.slice(0, c[i][0]) + c[i][1]); } catch (e) { } }
+    return null;
+  }
   function render(str) {
     if (!str) return '';
     var o = null;
-    if (typeof str === 'object') o = str; else if (String(str).charAt(0) === '{') { try { o = JSON.parse(str); } catch (e) { o = null; } }
+    if (typeof str === 'object') o = str; else if (String(str).charAt(0) === '{') o = repair(String(str));
+    if (o && !o.v && o.sammanfattning) o = { v: 2, kind: 'coach', charts: null, ai: o };
     if (o && o.v === 2) { if (o.kind === 'fighter') return fighter(o); if (o.kind === 'team') return team(o); return coach(o); }
+    if (String(str).charAt(0) === '{') return '<p class="vz-note">Analysen gick inte att visa. Kör den igen.</p>';
     return '<div class="vz-legacy">' + lite(String(str)) + '</div>';
   }
   return { render: render };
