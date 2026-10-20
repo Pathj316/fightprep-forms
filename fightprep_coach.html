@@ -480,6 +480,32 @@ function archHtml(sc){
     var optsH=ARCH_LV.map(function(l){return '<option value="'+l[0]+'"'+(l[0]===near[0]?' selected':'')+'>'+l[1]+'</option>'}).join('');
     return '<div style="border-top:1px solid var(--border);padding:8px 0"><b>'+esc(sv[0])+'</b><div class="small muted">'+esc(sv[1])+'</div><select data-arch="'+esc(k)+'" data-was="'+near[0]+'" style="margin-top:4px">'+optsH+'</select></div>'}).join('');
 }
+var WDN=['sön','mån','tis','ons','tors','fre','lör'];
+function passCard(id){
+  var box=$('pc');if(!box)return;
+  rpc('fp8_fighter_passes',{p_fighter_id:id,p_days:90}).then(function(days){days=days||[];
+    var form='<details class="card" style="margin:0 0 10px"><summary><b>+ Lägg till anteckning</b></summary><div class="g2"><div><label for="pnd">Datum</label><input type="date" id="pnd" value="'+esc(today())+'"></div><div><label for="pnt">Passtyp</label><select id="pnt">'+opts(COMBAT,'mma')+'</select></div></div>'+
+      '<label for="pnc">Anteckning om</label><select id="pnc">'+CQ.map(function(q,qi){return '<option value="q'+qi+'">'+esc(q[0])+'</option>'}).join('')+CATS.map(function(c){return '<option value="c'+esc(c[0])+'">'+esc(c[1])+'</option>'}).join('')+'</select>'+
+      '<textarea id="pnx" style="margin-top:8px" placeholder="Skriv fritt…"></textarea><label for="pnf">Flagga</label><select id="pnf">'+opts(FLAGS,'')+'</select><p id="pnm" class="small"></p><button class="btn sm" id="pns">Spara</button></details>';
+    var list=days.map(function(d,i){
+      var dt=new Date(d.date+'T12:00:00'),types={};
+      (d.passes||[]).forEach(function(p){(p.types||[]).forEach(function(t){types[t]=1})});(d.notes||[]).forEach(function(n){types[n.type]=1});
+      var fl=(d.flags||[]).map(function(f){return '<span class="pill" style="color:var(--danger)">'+esc(FN[f.flag]||f.flag)+'</span>'}).join('');
+      var head='<summary><b>'+WDN[dt.getDay()]+' '+esc(d.date)+'</b> '+Object.keys(types).map(function(t){return '<span class="pill">'+esc(TN[t]||t)+'</span>'}).join('')+(d.passes&&d.passes.length?chip('RPE',d.passes.map(function(p){return p.rpe}).join('/')):'')+fl+((d.notes||[]).length?' <span class="pill ok">'+d.notes.length+' anteckn.</span>':'')+'</summary>';
+      var body='';
+      (d.passes||[]).forEach(function(p){body+='<div class="small" style="margin-bottom:6px"><b>Fighterns svar:</b> '+(p.types||[]).map(function(t){return '<span class="pill">'+esc(TN[t]||t)+'</span>'}).join('')+chip('RPE',p.rpe)+(p.minutes?'<span class="pill">'+esc(p.minutes)+' min</span>':'')+(p.pain?'<span class="pill" style="color:var(--danger)">Värk'+(p.pain_location?': '+esc(p.pain_location):'')+'</span>':'')+(p.did?'<div><b>Gjorde:</b> '+esc(p.did)+'</div>':'')+(p.felt?'<div><b>Kändes:</b> '+esc(p.felt)+'</div>':'')+'</div>'});
+      if(d.daily)body+='<div class="small muted" style="margin-bottom:6px">Morgonkoll: sömn '+esc(d.daily.sleep)+'/5 · energi '+esc(d.daily.energy)+'/5 · ömhet '+esc(d.daily.soreness)+'/5 · stress '+esc(d.daily.stress)+'/5'+(d.daily.weight!=null?' · '+esc(d.daily.weight)+' kg':'')+(d.daily.pain?' · värk'+(d.daily.pain_location?': '+esc(d.daily.pain_location):''):'')+'</div>';
+      body+=(d.notes||[]).map(function(n){return '<div class="note"><q>'+esc((TN[n.type]||n.type)+' · '+(CN[n.category]||n.category)+(n.question?' – '+n.question:''))+'</q>'+esc(n.note)+' <button class="btn sec sm" data-prm="'+esc(n.id)+'">Ta bort</button></div>'}).join('');
+      return '<details class="card" style="margin:0 0 8px"'+(i===0?' open':'')+'>'+head+'<div style="margin-top:8px">'+(body||'<span class="muted small">Inget inlagt.</span>')+'</div></details>';
+    }).join('')||'<p class="muted small">Inga pass inlagda för den här fightern de senaste 90 dagarna.</p>';
+    box.innerHTML='<h3 style="margin:0 0 6px">Pass</h3><p class="small muted">Fighterns egna svar och dina anteckningar, dag för dag. Senaste 90 dagarna.</p>'+form+list;
+    $('pns').onclick=function(){var t=nz($('pnx').value),m=$('pnm');if(!t){fail(m,new Error('Skriv något först'));return}
+      var v=$('pnc').value,cat,q=null;if(v.charAt(0)==='q'){var qq=CQ[+v.slice(1)];cat=qq[1];q=qq[2]}else cat=v.slice(1);
+      var d=$('pnd').value,ty=$('pnt').value,fg=$('pnf').value;this.disabled=true;m.className='small muted';m.textContent='Sparar…';var b=this;
+      rpc('fp2_coach_add_note',{p_fighter_id:id,p_date:d,p_type:ty,p_category:cat,p_question:q,p_note:t}).then(function(){return fg?rpc('fp6_set_flag',{p_date:d,p_type:ty,p_fighter_id:id,p_flag:fg}):null}).then(function(){passCard(id)}).catch(function(er){b.disabled=false;fail(m,er)})};
+    box.onclick=function(e){var r=e.target.getAttribute('data-prm');if(r){e.target.disabled=true;rpc('fp2_coach_remove_note',{p_id:r}).then(function(){passCard(id)}).catch(function(er){alert(er.message)})}};
+  }).catch(function(er){fail(box,er)});
+}
 function fighterView(id){
   app.innerHTML='<p class="muted">Laddar…</p>';
   rpc('fp3_get_fighter',{p_id:id}).then(function(d){
@@ -489,6 +515,7 @@ function fighterView(id){
      (f.injury_status?'<p><span class="pill">Skada: '+esc(f.injury_status)+'</span></p>':'')+
      (f.current_training_focus?'<p><b>Fokus:</b> '+esc(f.current_training_focus)+'</p>':'')+
      (f.general_strengths?'<p><b>Styrkor:</b> '+esc(f.general_strengths)+'</p>':'')+(f.general_weaknesses?'<p><b>Svagheter:</b> '+esc(f.general_weaknesses)+'</p>':'')+'</div>'+
+     '<div class="card" id="pc"><p class="muted small">Laddar pass…</p></div>'+
      '<div class="card" id="an"><p class="muted small">Laddar analys…</p></div>'+
      '<div class="card" id="wk"><p class="muted small">Laddar veckosammanfattning…</p></div>'+
      '<div class="card" id="pf"><p class="muted small">Laddar profil…</p></div>'+
@@ -497,7 +524,7 @@ function fighterView(id){
      '<div class="card"><h3 style="margin-top:0">Incheckningslänk</h3><p class="small muted">Personlig länk fightern använder efter varje pass. Visas bara en gång.</p><label>Adress till fighter_checkin.html</label><input id="lb" type="url" value="'+esc(ls('fp3_base')||'')+'"><p id="lo" class="small"></p><div class="row"><button class="btn sm" id="lc">Skapa ny länk</button><button class="btn sec sm" id="lr">Stäng av länk</button><button class="btn sec sm" id="ls">Sammanställning</button></div></div>'+
      '<div class="card" id="arc"><h3 style="margin-top:0">Arketyper</h3><p class="small muted">En fighter kan ha flera. Välj hur tydligt varje arketyp passar. Hoppa över de som inte passar.</p>'+archHtml(sc)+'<p id="m2" class="small"></p><button class="btn" id="ab">Spara arketyper</button></div>';
     app.innerHTML=h;
-    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};profileCard(id);weeklyCard(id);analysisCard(id);
+    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};profileCard(id);passCard(id);weeklyCard(id);analysisCard(id);
     $('dl').onclick=function(){if(confirm('Radera '+f.name+' och all kopplad data?'))rpc('fp3_delete_fighter',{p_id:id}).then(function(){S.view=null;render()}).catch(function(er){alert(er.message)})};
     $('na').onclick=function(){var t=nz($('nt').value);if(!t){fail($('m1'),new Error('Skriv något'));return}rpc('fp3_add_fighter_note',{p_fighter_id:id,p_category:$('nc').value,p_note:t,p_match_label:nz($('nm').value)}).then(function(){fighterView(id)}).catch(function(er){fail($('m1'),er)})};
     $('nl').onclick=function(e){var r=e.target.getAttribute('data-rm');if(r)rpc('fp3_delete_fighter_note',{p_id:r}).then(function(){fighterView(id)}).catch(function(er){alert(er.message)})};
