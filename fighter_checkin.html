@@ -61,6 +61,40 @@ select,input[type=number]{width:100%;font:inherit;color:var(--text);background:v
 .txt{margin:6px 0 0;white-space:pre-wrap}
 h2{font-size:1.1rem;margin:0 0 8px}
 
+
+/* VZ */
+.vz-card{background:var(--surface,#fff);border:1px solid var(--border,#d5dbe3);border-left:4px solid var(--border,#d5dbe3);border-radius:12px;padding:14px;margin:0 0 12px}
+.vz-card.good{border-left-color:#1f9d6b}.vz-card.work{border-left-color:#d99a06}.vz-card.warn{border-left-color:#d63a54}.vz-card.info{border-left-color:#4a7be0}
+.vz-card h3{margin:0 0 8px;font-size:1.02rem}
+.vz-card p{margin:0 0 8px}
+.vz-h{margin:4px 0 10px;font-size:1.25rem}
+.vz-tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:0 0 6px}
+.vz-tile{background:var(--surface,#fff);border:1px solid var(--border,#d5dbe3);border-radius:12px;padding:10px 12px}
+.vz-l{font-size:.82rem;color:var(--muted,#586272)}
+.vz-v{font-size:1.5rem;font-weight:700;line-height:1.2}.vz-v small{font-size:.8rem;font-weight:500;color:var(--muted,#586272)}
+.vz-d{font-size:.78rem;color:var(--muted,#586272)}
+.vz-note{font-size:.82rem;color:var(--muted,#586272);margin:6px 0 10px}
+.vz-svg{width:100%;height:auto;display:block}
+.vz-grid{stroke:var(--border,#d5dbe3);stroke-width:1}
+.vz-ax{fill:var(--muted,#586272);font-size:9px}
+.vz-legend{display:flex;flex-wrap:wrap;gap:4px 12px;margin:2px 0 4px}
+.vz-key{font-size:.8rem;display:inline-flex;align-items:center;gap:5px}.vz-key i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.vz-line{margin:0 0 10px}.vz-lh{display:flex;justify-content:space-between;font-size:.9rem}.vz-lh span{color:var(--muted,#586272)}
+.vz-hb{display:grid;gap:6px}.vz-hr{display:grid;grid-template-columns:88px 1fr 44px;gap:8px;align-items:center;font-size:.9rem}
+.vz-hbar{background:var(--chip,#eef1f5);border-radius:6px;height:12px;overflow:hidden}.vz-hbar i{display:block;height:100%}
+.vz-pl{display:grid;gap:6px}.vz-pr{display:grid;grid-template-columns:70px 1fr;gap:2px 8px;align-items:center;font-size:.88rem;padding:6px 0;border-top:1px solid var(--border,#d5dbe3)}
+.vz-pd{font-weight:600}.vz-rpe{grid-column:1/3;background:var(--chip,#eef1f5);border-radius:6px;height:8px;overflow:hidden;display:block}.vz-rpe i{display:block;height:100%;background:var(--accent,#c8102e)}.vz-pm{grid-column:1/3;color:var(--muted,#586272);font-size:.8rem}
+.vz-tag{display:inline-block;border:1px solid;border-radius:99px;padding:0 8px;font-size:.78rem;margin:0 4px 2px 0}
+.vz-it{padding:8px 0 8px 10px;border-left:3px solid var(--border,#d5dbe3);margin:0 0 8px}.vz-it.good{border-left-color:#1f9d6b}.vz-it.work{border-left-color:#d99a06}.vz-it.warn{border-left-color:#d63a54}.vz-it.info{border-left-color:#4a7be0}
+.vz-why{font-size:.86rem;color:var(--muted,#586272);margin-top:2px}
+.vz-chip{display:inline-block;border-radius:99px;padding:1px 10px;font-size:.78rem;font-weight:700;color:#fff;background:#4a7be0;margin:0 0 6px}.vz-chip.good{background:#1f9d6b}.vz-chip.warn{background:#d63a54}.vz-chip.work{background:#d99a06}
+.vz-sc{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 0 8px}
+.vz-t{border-collapse:collapse;width:100%;font-size:.86rem}.vz-t th,.vz-t td{border-bottom:1px solid var(--border,#d5dbe3);padding:6px 8px;text-align:left;vertical-align:top}
+.vz-team th[scope=row]{position:sticky;left:0;background:var(--surface,#fff);white-space:nowrap;z-index:1}
+.vz-c{white-space:nowrap}.vz-c.ok{background:rgba(31,157,107,.16)}.vz-c.mid{background:rgba(217,154,6,.22)}.vz-c.bad{background:rgba(214,58,84,.24)}.vz-c.info{background:rgba(74,123,224,.16)}.vz-c.na{color:var(--muted,#586272)}
+.vz-s{font-weight:700}
+.vz-sw{padding:1px 6px;border-radius:6px}.vz-sw.ok{background:rgba(31,157,107,.16)}.vz-sw.mid{background:rgba(217,154,6,.22)}.vz-sw.bad{background:rgba(214,58,84,.24)}
+.vz-legacy{line-height:1.5}
 </style>
 </head>
 <body>
@@ -89,6 +123,193 @@ h2{font-size:1.1rem;margin:0 0 8px}
   var ctx = null, tab = 'today', weeklyData = null;
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+/* ---- VZ: grafer och analyskort (ingen extern kod) ---- */
+var VZ = (function () {
+  var TN = { styrka: 'Styrka', kondition: 'Kondition', mma: 'MMA', striking: 'Striking', grappling: 'Grappling', wrestling: 'Brottning', sparring: 'Sparring', annat: 'Annat' };
+  var TC = { styrka: '#d99a06', kondition: '#1f9d8f', mma: '#d63a54', striking: '#e0661a', grappling: '#4a7be0', wrestling: '#8a5ad6', sparring: '#c2417f', annat: '#8793a3' };
+  var WD = ['sö', 'må', 'ti', 'on', 'to', 'fr', 'lö'];
+  function wd(iso) { return WD[new Date(iso + 'T12:00:00').getDay()]; }
+  function dm(iso) { return iso.slice(8, 10) + '/' + iso.slice(5, 7); }
+  function num(n) { return n == null ? '–' : String(n); }
+  function lite(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
+  function tag(t) { return '<span class="vz-tag" style="border-color:' + (TC[t] || '#8793a3') + '">' + esc(TN[t] || t) + '</span>'; }
+
+  function tiles(cur, prev) {
+    cur = cur || {}; prev = prev || {};
+    function t(label, v, p, unit) {
+      var d = '';
+      if (p != null && Number(p) > 0 && v != null) {
+        var diff = Number(v) - Number(p), pct = Math.round(diff / Number(p) * 100);
+        d = '<div class="vz-d">' + (diff > 0 ? '▲' : diff < 0 ? '▼' : '●') + ' ' + (diff > 0 ? '+' : '') + pct + ' % mot förra perioden</div>';
+      } else { d = '<div class="vz-d">ingen jämförelse</div>'; }
+      return '<div class="vz-tile"><div class="vz-l">' + label + '</div><div class="vz-v">' + num(v) + (v != null && unit ? '<small> ' + unit + '</small>' : '') + '</div>' + d + '</div>';
+    }
+    return '<div class="vz-tiles">' + t('Pass', cur.sessions, prev.sessions, '') + t('Träningstid', cur.minutes, prev.minutes, 'min') + t('Snitt-RPE', cur.avg_rpe, prev.avg_rpe, '') + t('Belastning', cur.load, prev.load, '') + '</div>' +
+      '<p class="vz-note">Belastning = hur tungt (RPE 1–10) × minuter, summerat. Det är ett mått på hur mycket kroppen har jobbat. Jämförelsen gäller föregående period av samma längd.</p>';
+  }
+
+  function stackedBars(days) {
+    if (!days || !days.length) return '';
+    var W = 320, H = 170, L = 30, B = 24, T = 14, n = days.length, bw = Math.max(4, Math.min(34, (W - L - 6) / n - 4));
+    var max = 0, used = {}; days.forEach(function (d) { if (d.minutes > max) max = d.minutes; for (var k in d.by_type) used[k] = 1; });
+    if (!max) return '<p class="vz-note">Inga pass att visa för perioden.</p>';
+    var step = max > 150 ? 60 : 30, top = Math.ceil(max / step) * step, ph = H - B - T, s = '';
+    for (var g = 0; g <= top; g += step) { var y = T + ph - g / top * ph; s += '<line x1="' + L + '" x2="' + (W - 4) + '" y1="' + y + '" y2="' + y + '" class="vz-grid"/><text x="' + (L - 4) + '" y="' + (y + 3) + '" class="vz-ax" text-anchor="end">' + g + '</text>'; }
+    var slot = (W - L - 6) / n, every = n <= 14 ? 1 : Math.ceil(n / 8);
+    days.forEach(function (d, i) {
+      var x = L + i * slot + (slot - bw) / 2, yb = T + ph;
+      Object.keys(d.by_type || {}).forEach(function (k) {
+        var v = d.by_type[k]; if (!v) return; var h = v / top * ph; yb -= h;
+        s += '<rect x="' + x.toFixed(1) + '" y="' + yb.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="2" fill="' + (TC[k] || '#8793a3') + '"><title>' + esc(dm(d.date) + ' ' + (TN[k] || k) + ' ' + v + ' min') + '</title></rect>';
+      });
+      if (d.minutes > 0 && n <= 14) s += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (yb - 3).toFixed(1) + '" class="vz-ax" text-anchor="middle">' + d.minutes + '</text>';
+      if (i % every === 0) s += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 8) + '" class="vz-ax" text-anchor="middle">' + (n <= 14 ? wd(d.date) : dm(d.date)) + '</text>';
+    });
+    var leg = Object.keys(used).map(function (k) { return '<span class="vz-key"><i style="background:' + (TC[k] || '#8793a3') + '"></i>' + esc(TN[k] || k) + '</span>'; }).join('');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="vz-svg" role="img" aria-label="Träningstid per dag i minuter, uppdelat på passtyp">' + s + '</svg><div class="vz-legend">' + leg + '</div><p class="vz-note">Staplarna visar minuter per dag. Färgen visar vilken sorts träning.</p>';
+  }
+
+  function weekBars(weeks) {
+    if (!weeks || weeks.length < 2) return '';
+    var W = 320, H = 150, L = 34, B = 24, T = 16, n = weeks.length, max = 0;
+    weeks.forEach(function (w) { if (w.load > max) max = w.load; });
+    if (!max) return '';
+    var ph = H - B - T, slot = (W - L - 6) / n, bw = Math.max(5, Math.min(36, slot - 4)), s = '', every = n <= 10 ? 1 : Math.ceil(n / 8);
+    s += '<line x1="' + L + '" x2="' + (W - 4) + '" y1="' + (T + ph) + '" y2="' + (T + ph) + '" class="vz-grid"/>';
+    weeks.forEach(function (w, i) {
+      var h = w.load / max * ph, x = L + i * slot + (slot - bw) / 2, y = T + ph - h;
+      s += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="2" fill="var(--accent,#c8102e)"><title>' + esc('Vecka från ' + w.week + ': belastning ' + w.load + ', ' + w.sessions + ' pass') + '</title></rect>';
+      if (n <= 10) s += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y - 3).toFixed(1) + '" class="vz-ax" text-anchor="middle">' + w.load + '</text>';
+      if (i % every === 0) s += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 8) + '" class="vz-ax" text-anchor="middle">' + dm(w.week) + '</text>';
+    });
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="vz-svg" role="img" aria-label="Belastning per vecka">' + s + '</svg><p class="vz-note">Belastning per vecka (RPE × minuter). Veckorna är markerade med måndagens datum.</p>';
+  }
+
+  function line(rows, key, label, lo, hi, color, lowIsGood, hint) {
+    var pts = (rows || []).filter(function (r) { return r[key] != null; });
+    if (!pts.length) return '';
+    var W = 320, H = 100, L = 24, B = 18, T = 8, ph = H - B - T, n = rows.length, s = '', i, avg = 0;
+    function X(i) { return L + (n === 1 ? (W - L - 8) / 2 : i / (n - 1) * (W - L - 12)); }
+    function Y(v) { return T + ph - (v - lo) / (hi - lo) * ph; }
+    for (var g = lo; g <= hi; g += (hi - lo > 5 ? 2 : 1)) s += '<line x1="' + L + '" x2="' + (W - 6) + '" y1="' + Y(g) + '" y2="' + Y(g) + '" class="vz-grid"/><text x="' + (L - 4) + '" y="' + (Y(g) + 3) + '" class="vz-ax" text-anchor="end">' + g + '</text>';
+    var seg = [], d = '';
+    rows.forEach(function (r, idx) { if (r[key] == null) { if (d) seg.push(d); d = ''; return; } d += (d ? ' L' : 'M') + X(idx).toFixed(1) + ' ' + Y(r[key]).toFixed(1); });
+    if (d) seg.push(d);
+    seg.forEach(function (p) { s += '<path d="' + p + '" fill="none" stroke="' + color + '" stroke-width="2"/>'; });
+    rows.forEach(function (r, idx) { if (r[key] != null) { avg += Number(r[key]); s += '<circle cx="' + X(idx).toFixed(1) + '" cy="' + Y(r[key]).toFixed(1) + '" r="3" fill="' + color + '"><title>' + esc(dm(r.date) + ': ' + r[key]) + '</title></circle>'; } });
+    avg = avg / pts.length;
+    var every = n <= 10 ? 1 : Math.ceil(n / 7);
+    rows.forEach(function (r, idx) { if (idx % every === 0) s += '<text x="' + X(idx).toFixed(1) + '" y="' + (H - 4) + '" class="vz-ax" text-anchor="middle">' + (n <= 10 ? wd(r.date) : dm(r.date)) + '</text>'; });
+    return '<div class="vz-line"><div class="vz-lh"><b>' + esc(label) + '</b><span>snitt ' + (Math.round(avg * 10) / 10) + '</span></div><svg viewBox="0 0 ' + W + ' ' + H + '" class="vz-svg" role="img" aria-label="' + esc(label) + ' över tid">' + s + '</svg><div class="vz-note" style="margin:0">' + esc(hint) + '</div></div>';
+  }
+
+  function wellness(w) {
+    if (!w || !w.length) return '<p class="vz-note">Ingen morgonkoll under perioden.</p>';
+    var h = '';
+    h += line(w, 'sleep', 'Sömn (kvalitet)', 1, 5, '#4a7be0', false, '1 = dåligt, 5 = bra. Höjd linje är bra.');
+    h += line(w, 'energy', 'Energi', 1, 5, '#1f9d8f', false, '1 = slut, 5 = full av energi. Höjd linje är bra.');
+    h += line(w, 'soreness', 'Ömhet', 1, 5, '#e0661a', true, '1 = inte öm, 5 = mycket öm. Stigande linje betyder mer träningsvärk.');
+    h += line(w, 'stress', 'Stress', 1, 5, '#c2417f', true, '1 = lugn, 5 = mycket stressad.');
+    var wt = w.filter(function (r) { return r.weight != null; });
+    if (wt.length > 1) { var mn = Math.floor(Math.min.apply(null, wt.map(function (r) { return Number(r.weight); }))) - 1, mx = Math.ceil(Math.max.apply(null, wt.map(function (r) { return Number(r.weight); }))) + 1; h += line(w, 'weight', 'Vikt (kg)', mn, Math.max(mx, mn + 2), '#7a8594', false, 'Vikt på morgonen. Jämför mot viktklassens gräns.'); }
+    return h;
+  }
+
+  function typeBars(types) {
+    var ks = Object.keys(types || {}).filter(function (k) { return types[k] > 0; }), tot = 0;
+    ks.forEach(function (k) { tot += types[k]; });
+    if (!tot) return '';
+    ks.sort(function (a, b) { return types[b] - types[a]; });
+    return '<div class="vz-hb">' + ks.map(function (k) { var p = Math.round(types[k] / tot * 100); return '<div class="vz-hr"><span>' + esc(TN[k] || k) + '</span><div class="vz-hbar"><i style="width:' + p + '%;background:' + (TC[k] || '#8793a3') + '"></i></div><b>' + p + ' %</b></div>'; }).join('') + '</div><p class="vz-note">Så fördelas träningstiden mellan olika sorters träning.</p>';
+  }
+
+  function passRows(passes) {
+    if (!passes || !passes.length) return '';
+    return '<div class="vz-pl">' + passes.slice(-14).map(function (p) { return '<div class="vz-pr"><span class="vz-pd">' + wd(p.date) + ' ' + dm(p.date) + '</span><span>' + (p.types || []).map(tag).join('') + '</span><span class="vz-rpe" title="RPE ' + esc(p.rpe) + ' av 10"><i style="width:' + (p.rpe * 10) + '%"></i></span><span class="vz-pm">' + (p.minutes ? esc(p.minutes) + ' min' : '') + ' · RPE ' + esc(p.rpe) + '</span></div>'; }).join('') + '</div><p class="vz-note">Längden på det röda strecket visar hur tungt passet var (RPE av 10).</p>';
+  }
+
+  function card(title, body, cls) { return body ? '<div class="vz-card ' + (cls || '') + '"><h3>' + esc(title) + '</h3>' + body + '</div>' : ''; }
+  function p(t) { return t ? '<p>' + lite(t) + '</p>' : ''; }
+  function items(arr, cls) {
+    if (!arr || !arr.length) return '';
+    return arr.map(function (x) { return '<div class="vz-it ' + (cls || '') + '"><b>' + esc(x.punkt || x.rubrik || '') + '</b>' + (x.varfor ? '<div class="vz-why">Därför: ' + esc(x.varfor) + '</div>' : '') + (x.text ? '<div>' + esc(x.text) + '</div>' : '') + '</div>'; }).join('');
+  }
+  var LV = { bra: ['good', 'Bra'], ok: ['info', 'Okej'], info: ['info', 'Info'], varning: ['warn', 'Var uppmärksam'] };
+
+  function fighter(a) {
+    var ai = a.ai || {}, c = a.charts || {}, k = ai.kroppen || {}, lv = LV[k.niva] || LV.info;
+    var h = '<div class="vz">';
+    if (ai.rubrik) h += '<h2 class="vz-h">' + esc(ai.rubrik) + '</h2>';
+    h += card('Kort sagt', p(ai.sammanfattning), 'info');
+    h += tiles(c.current, c.previous);
+    h += card('Din träning per dag', stackedBars(c.days));
+    h += card('Dina pass', passRows(c.passes));
+    h += card('Hur kroppen mår', (k.text ? '<div class="vz-chip ' + lv[0] + '">' + lv[1] + '</div>' + p(k.text) : '') + wellness(c.wellness), lv[0]);
+    h += card('Det här funkar', items(ai.funkar), 'good');
+    h += card('Det här kan du jobba på', items(ai.jobba_pa), 'work');
+    h += card('Inför nästa vecka', p(ai.nasta_vecka), 'info');
+    return h + '</div>';
+  }
+
+  function coach(a) {
+    var ai = a.ai || {}, c = a.charts || {}, h = '<div class="vz">';
+    h += card('Sammanfattning', p(ai.sammanfattning), 'info');
+    if (ai.nyckelfynd && ai.nyckelfynd.length) h += '<div class="vz-card"><h3>Viktigast just nu</h3>' + ai.nyckelfynd.map(function (x) { var l = LV[x.niva] || LV.info; return '<div class="vz-it ' + l[0] + '"><span class="vz-chip ' + l[0] + '">' + l[1] + '</span> <b>' + esc(x.rubrik) + '</b><div>' + esc(x.text) + '</div></div>'; }).join('') + '</div>';
+    h += tiles(c.current, c.previous);
+    h += card('Träning per dag', stackedBars(c.days));
+    h += card('Belastning per vecka', weekBars(c.weeks));
+    h += card('Vad träningen bestod av', typeBars(c.types));
+    h += card('Mående över tid', wellness(c.wellness));
+    h += card('Belastning', p(ai.belastning));
+    h += card('Mående', p(ai.maende));
+    h += card('Skador och värk', p(ai.skador), ai.skador ? 'warn' : '');
+    h += card('Teman', p(ai.teman));
+    h += card('Styrkor och svagheter', p(ai.styrkor_svagheter));
+    if (ai.lager && ai.lager.length) h += card('Lagren, översatta', ai.lager.map(function (x) { return '<div class="vz-it"><b>' + esc(x.rubrik) + '</b><div>' + esc(x.betydelse) + '</div>' + (x.jamfort_med ? '<div class="vz-why">Jämfört med: ' + esc(x.jamfort_med) + '</div>' : '') + '</div>'; }).join(''));
+    var tp = ai.traningsupplagg;
+    if (tp) {
+      var rows = (tp.veckomall || []).map(function (r) { return '<tr><td><b>' + esc(r.dag) + '</b></td><td>' + esc(r.pass) + '</td><td>' + esc(r.intensitet) + '</td><td>' + esc(r.innehall) + (r.varfor ? '<div class="vz-why">' + esc(r.varfor) + '</div>' : '') + '</td></tr>'; }).join('');
+      h += card('Förslag på träningsupplägg', p(tp.mal) + (rows ? '<div class="vz-sc"><table class="vz-t"><thead><tr><th>Dag</th><th>Pass</th><th>Tyngd</th><th>Innehåll</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '') + p(tp.justeringar) + '<p class="vz-note">Förslag att bedöma själv. De bygger på profil, svagheter, skador och lagren, inte på att AI:n har sett fightern träna.</p>', 'work');
+    }
+    if (ai.drillar && ai.drillar.length) h += card('Förslag på drillar', ai.drillar.map(function (d) { return '<div class="vz-it work"><b>' + esc(d.namn) + '</b>' + (d.syfte ? '<div>Syfte: ' + esc(d.syfte) + '</div>' : '') + (d.upplagg ? '<div>Upplägg: ' + esc(d.upplagg) + '</div>' : '') + (d.coachpunkter ? '<div>Titta på: ' + esc(d.coachpunkter) + '</div>' : '') + (d.koppling ? '<div class="vz-why">Kopplat till: ' + esc(d.koppling) + '</div>' : '') + '</div>'; }).join(''), 'work');
+    if (ai.saknas && ai.saknas.length) h += card('Det här saknas i underlaget', '<ul>' + ai.saknas.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>');
+    return h + '</div>';
+  }
+
+  function cell(cls, txt, sym) { return '<td class="vz-c ' + cls + '"><span class="vz-s">' + sym + '</span> ' + txt + '</td>'; }
+  function teamRow(r) {
+    var ago = null; if (r.last_activity) ago = Math.round((Date.now() - new Date(r.last_activity + 'T12:00:00').getTime()) / 86400000);
+    var ld = (function () { var l = Number(r.load || 0), pv = Number(r.load_prev || 0); if (!l && !pv) return cell('na', '–', '·'); if (!pv) return cell('info', 'ny (' + l + ')', '•'); var q = l / pv; var t = l + ' (' + (q >= 1 ? '+' : '') + Math.round((q - 1) * 100) + ' %)'; return q > 1.5 ? cell('bad', t, '✕') : q > 1.3 ? cell('mid', t, '!') : q < 0.5 ? cell('mid', t, '!') : cell('ok', t, '✓'); })();
+    function sc(v, badLow, midLow, inv) { if (v == null) return cell('na', '–', '·'); v = Number(v); if (inv) return v >= badLow ? cell('bad', v, '✕') : v >= midLow ? cell('mid', v, '!') : cell('ok', v, '✓'); return v <= badLow ? cell('bad', v, '✕') : v <= midLow ? cell('mid', v, '!') : cell('ok', v, '✓'); }
+    var fl = r.flags || [], FLN = { skadeoro: 'Skadeoro', prata: 'Prata', folj_upp: 'Följ upp' };
+    var flc = fl.indexOf('skadeoro') >= 0 || fl.indexOf('prata') >= 0 ? cell('bad', fl.map(function (f) { return FLN[f] || f; }).join(', '), '✕') : fl.length ? cell('mid', fl.map(function (f) { return FLN[f] || f; }).join(', '), '!') : cell('ok', '–', '✓');
+    var pn = Number(r.pain_days || 0), pc = pn >= 3 ? cell('bad', pn + ' dagar', '✕') : pn >= 1 ? cell('mid', pn + ' dagar', '!') : cell('ok', '0', '✓');
+    var wt = (r.weight_first != null && r.weight_last != null) ? (function () { var d = Math.round((Number(r.weight_last) - Number(r.weight_first)) * 10) / 10; return Math.abs(d) > 2 ? cell('mid', r.weight_last + ' kg (' + (d > 0 ? '+' : '') + d + ')', '!') : cell('ok', r.weight_last + ' kg (' + (d > 0 ? '+' : '') + d + ')', '✓'); })() : cell('na', '–', '·');
+    var ac = ago == null ? cell('na', 'aldrig', '·') : ago > 14 ? cell('bad', ago + ' d sedan', '✕') : ago > 7 ? cell('mid', ago + ' d sedan', '!') : cell('ok', ago === 0 ? 'idag' : ago + ' d sedan', '✓');
+    return '<tr><th scope="row">' + esc(r.name) + '</th>' + cell('na', r.sessions + ' pass', '') + ld + sc(r.sleep, 2.5, 3.2, false) + sc(r.energy, 2.5, 3.2, false) + sc(r.soreness, 4, 3.3, true) + sc(r.stress, 4, 3.3, true) + pc + wt + flc + ac + '</tr>';
+  }
+  function team(a) {
+    var ai = a.ai || {}, t = a.table || [];
+    var h = '<div class="vz">' + card('Sammanfattning', p(ai.sammanfattning), 'info');
+    if (t.length) h += '<div class="vz-card"><h3>Laget i en tabell</h3><div class="vz-sc"><table class="vz-t vz-team"><thead><tr><th>Fighter</th><th>Pass</th><th>Belastning</th><th>Sömn</th><th>Energi</th><th>Ömhet</th><th>Stress</th><th>Värk</th><th>Vikt</th><th>Flagga</th><th>Senast aktiv</th></tr></thead><tbody>' + t.map(teamRow).join('') + '</tbody></table></div>' +
+      '<p class="vz-note"><span class="vz-sw ok">✓ grön</span> inget att göra · <span class="vz-sw mid">! gul</span> håll koll · <span class="vz-sw bad">✕ röd</span> följ upp nu · – saknas data.<br>Belastning jämförs med föregående period av samma längd (gul över +30 %, röd över +50 %). Sömn och energi är snitt 1–5 (gul 3,2 eller lägre, röd 2,5 eller lägre). Ömhet och stress är snitt 1–5 där högt är sämre (gul 3,3 eller mer, röd 4 eller mer). Värk visar antal dagar. Vikten gul vid mer än 2 kg förändring.</p></div>';
+    h += card('Teman i laget', p(ai.teman));
+    if (ai.fighters && ai.fighters.length) h += card('Per fighter', ai.fighters.map(function (f) { return '<div class="vz-it"><b>' + esc(f.namn) + '</b><div>' + esc(f.kommentar) + '</div></div>'; }).join(''));
+    if (ai.folj_upp && ai.folj_upp.length) h += card('Att följa upp nu', ai.folj_upp.map(function (f) { return '<div class="vz-it warn"><b>' + esc(f.fighter) + '</b><div>' + esc(f.varfor) + '</div>' + (f.forslag ? '<div class="vz-why">Förslag: ' + esc(f.forslag) + '</div>' : '') + '</div>'; }).join(''), 'warn');
+    if (ai.saknas && ai.saknas.length) h += card('Det här saknas i underlaget', '<ul>' + ai.saknas.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>');
+    return h + '</div>';
+  }
+
+  function render(str) {
+    if (!str) return '';
+    var o = null;
+    if (typeof str === 'object') o = str; else if (String(str).charAt(0) === '{') { try { o = JSON.parse(str); } catch (e) { o = null; } }
+    if (o && o.v === 2) { if (o.kind === 'fighter') return fighter(o); if (o.kind === 'team') return team(o); return coach(o); }
+    return '<div class="vz-legacy">' + lite(String(str)) + '</div>';
+  }
+  return { render: render };
+}());
+
   function fmt(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
   function getToken() { var m = location.hash.match(/[#&]t=([A-Za-z0-9]+)/) || location.search.match(/[?&]t=([A-Za-z0-9]+)/); return m ? m[1] : ''; }
   function $(id) { return document.getElementById(id); }
@@ -234,10 +455,10 @@ h2{font-size:1.1rem;margin:0 0 8px}
     return post('/functions/v1/fighter_weekly', { token: token, mode: mode }).catch(function (e) { throw e; });
   }
   function renderWeek() {
-    shell('<div class="card" id="wk"><p class="sub" style="margin:0">Laddar…</p></div><div class="card"><h2>Tidigare analyser</h2>' + (ctx.analyses.length ? ctx.analyses.map(function (a) { return '<div style="border-top:1px solid var(--border);padding:10px 0"><b>Vecka från ' + esc(a.week_start) + '</b><div class="txt">' + fmt(a.summary) + '</div></div>'; }).join('') : '<p class="sub" style="margin:0">Inga än.</p>') + '</div>');
+    shell('<div class="card" id="wk"><p class="sub" style="margin:0">Laddar…</p></div><div class="card"><h2>Tidigare analyser</h2>' + (ctx.analyses.length ? ctx.analyses.map(function (a) { return '<div style="border-top:1px solid var(--border);padding:10px 0"><b>Vecka från ' + esc(a.week_start) + '</b><div class="txt">' + VZ.render(a.summary) + '</div></div>'; }).join('') : '<p class="sub" style="margin:0">Inga än.</p>') + '</div>');
     var box = $('wk');
     function draw(j) {
-      if (j.summary) { box.innerHTML = '<h2>Din veckoanalys</h2><p class="sub" style="margin:0 0 10px">' + esc(j.week_start) + ' till ' + esc(j.week_end) + '</p><div class="txt">' + fmt(j.summary) + '</div>'; return; }
+      if (j.summary) { box.innerHTML = '<h2>Din veckoanalys</h2><p class="sub" style="margin:0 0 10px">' + esc(j.week_start) + ' till ' + esc(j.week_end) + '</p><div class="txt">' + VZ.render(j.summary) + '</div>'; return; }
       box.innerHTML = '<h2>Din veckoanalys</h2><p class="sub" style="margin:0 0 12px">Få en analys av din vecka (' + esc(j.week_start) + ' till ' + esc(j.week_end) + '). Den bygger på det du fyllt i. Du kan göra en per vecka, från söndag kl 20.</p><button class="btn" type="button" id="wgo">Skapa min veckoanalys</button><p class="err" id="werr" hidden></p>';
       $('wgo').onclick = function () {
         var b = this; b.disabled = true; b.textContent = 'Skriver…';
