@@ -268,6 +268,7 @@ var VZ = (function () {
     h += card('Kort sagt', p(ai.sammanfattning), 'info', true);
     if (c.current) h += tiles(c.current, c.previous);
     h += card('Din träning per dag', stackedBars(c.days), '', true);
+    h += card('Samband jag ser', items(ai.samband), 'info', true);
     h += card('Det här funkar', items(ai.funkar), 'good', true);
     h += card('Det här kan du jobba på', items(ai.jobba_pa), 'work', true);
     h += card('Hur kroppen mår', (k.text ? '<div class="vz-chip ' + lv[0] + '">' + lv[1] + '</div>' + p(k.text) : '') + wellness(c.wellness), lv[0]);
@@ -280,6 +281,15 @@ var VZ = (function () {
     var ai = a.ai || {}, c = a.charts || {}, h = '<div class="vz">';
     h += toggle();
     h += card('Sammanfattning', p(ai.sammanfattning), 'info', true);
+    var SK = { 'hög': ['good', 'Hög säkerhet'], 'medel': ['info', 'Medelhög säkerhet'], 'låg': ['work', 'Låg säkerhet'] };
+    if (ai.slutsatser && ai.slutsatser.length) h += card('Slutsatser', ai.slutsatser.map(function (x) {
+      var s = SK[String(x.sakerhet || '').toLowerCase()] || ['info', 'Säkerhet ej angiven'];
+      return '<div class="vz-it ' + s[0] + '"><span class="vz-chip ' + s[0] + '">' + s[1] + '</span> <b>' + esc(x.rubrik) + '</b>' + p(x.slutsats) +
+        (x.bevis && x.bevis.length ? '<div class="vz-why">Bygger på: ' + x.bevis.map(esc).join(' · ') + '</div>' : '') +
+        (x.atgard ? '<div style="margin-top:6px"><b>Gör:</b> ' + esc(x.atgard) + '</div>' : '') + '</div>';
+    }).join(''), 'info', true);
+    if (ai.hypoteser && ai.hypoteser.length) h += card('Hypoteser att testa', ai.hypoteser.map(function (x) { return '<div class="vz-it work"><b>' + esc(x.hypotes) + '</b>' + (x.testa ? '<div class="vz-why">Så testar du: ' + esc(x.testa) + '</div>' : '') + '</div>'; }).join(''), 'work', true);
+    if (ai.motsagelser && ai.motsagelser.length) h += card('Det som inte stämmer ihop', '<ul>' + ai.motsagelser.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>', 'warn', true);
     if (ai.nyckelfynd && ai.nyckelfynd.length) h += card('Viktigast just nu', ai.nyckelfynd.map(function (x) { var l = LV[x.niva] || LV.info; return '<div class="vz-it ' + l[0] + '"><span class="vz-chip ' + l[0] + '">' + l[1] + '</span> <b>' + esc(x.rubrik) + '</b><div>' + esc(x.text) + '</div></div>'; }).join(''), '', true);
     if (c.current) h += tiles(c.current, c.previous);
     h += card('Träning per dag', stackedBars(c.days), '', true);
@@ -296,7 +306,8 @@ var VZ = (function () {
       h += card('Förslag på träningsupplägg', p(tp.mal) + (rows ? '<div class="vz-sc"><table class="vz-t"><thead><tr><th>Dag</th><th>Pass</th><th>Tyngd</th><th>Innehåll</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '') + (tp.justeringar ? sub('Justeringar om något avviker', p(tp.justeringar)) : '') + '<p class="vz-note">Förslag att bedöma själv. De bygger på profil, svagheter, skador och lagren, inte på att AI:n har sett fightern träna.</p>', 'work', true);
     }
     if (ai.drillar && ai.drillar.length) h += card('Förslag på drillar', ai.drillar.map(function (d) { return sub('<b>' + esc(d.namn) + '</b>', (d.syfte ? '<p><b>Syfte:</b> ' + esc(d.syfte) + '</p>' : '') + (d.upplagg ? '<p><b>Upplägg:</b> ' + esc(d.upplagg) + '</p>' : '') + (d.coachpunkter ? '<p><b>Titta på:</b> ' + esc(d.coachpunkter) + '</p>' : '') + (d.koppling ? '<div class="vz-why">Kopplat till: ' + esc(d.koppling) + '</div>' : ''), 'work'); }).join(''), 'work', true);
-    if (ai.saknas && ai.saknas.length) h += card('Det här saknas i underlaget', '<ul>' + ai.saknas.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>');
+    var sm = (ai.att_samla || []).concat(ai.saknas || []);
+    if (sm.length) h += card('Att samla in för en säkrare analys', '<ul>' + sm.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>');
     return h + '</div>';
   }
 
