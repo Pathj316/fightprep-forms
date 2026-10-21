@@ -688,7 +688,7 @@ function voiceCard(cfg){
   $('vsort').onclick=function(){
     stop();var t=nz($('vt').value);if(!t){fail($('vm'),new Error('Prata in eller skriv något först.'));return}
     var b=this;b.disabled=true;b.textContent='Sorterar…';$('vm').textContent='';$('vr').innerHTML='';
-    (cfg.fixed?Promise.resolve(cfg.fixed):rpc('fp3_list_fighters')).then(function(a){FL=(a||[]).map(function(f){return{id:f.id,name:f.name}});return api('/functions/v1/coach_voice_sort',{text:t,fighters:FL,date:VD(),type:VT()})}).then(function(r){b.disabled=false;b.textContent='Sortera med AI';review(r)}).catch(function(er){b.disabled=false;b.textContent='Sortera med AI';fail($('vm'),new Error(er.message==='tom_text'?'Det blev för lite text.':er.message))});
+    (cfg.fixed?Promise.resolve(cfg.fixed):rpc('fp3_list_fighters')).then(function(a){FL=(a||[]).map(function(f){return{id:f.id,name:f.name}});return api('/functions/v1/coach_voice_sort',{text:t,fighters:FL,date:VD(),type:VT(),fixed:!!cfg.fixed})}).then(function(r){b.disabled=false;b.textContent='Sortera med AI';review(r)}).catch(function(er){b.disabled=false;b.textContent='Sortera med AI';fail($('vm'),new Error(er.message==='tom_text'?'Det blev för lite text.':er.message))});
   };
 }
 function noteH(n){return '<div class="note"><q>'+esc((CN[n.category]||n.category)+(n.question?' – '+n.question:''))+'</q>'+esc(n.note)+' <button class="btn sec sm" data-rm="'+esc(n.id)+'">Ta bort</button></div>'}
