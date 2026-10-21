@@ -492,6 +492,24 @@ function archHtml(sc){
     return '<div style="border-top:1px solid var(--border);padding:8px 0"><b>'+esc(sv[0])+'</b><div class="small muted">'+esc(sv[1])+'</div><select data-arch="'+esc(k)+'" data-was="'+near[0]+'" style="margin-top:4px">'+optsH+'</select></div>'}).join('');
 }
 var WDN=['sön','mån','tis','ons','tors','fre','lör'];
+function matchCard(id){
+  var box=$('mc');if(!box)return;
+  rpc('fp9_matches',{p_fighter_id:id}).then(function(ms){ms=ms||[];
+    var list=ms.map(function(m){var dl=m.days_left;var when=dl>0?dl+' dagar kvar':dl===0?'idag':'för '+(-dl)+' dagar sedan';
+      return '<div class="note"><b>'+esc(m.match_date)+'</b> <span class="pill">'+esc(when)+'</span>'+(m.event?'<div>'+esc(m.event)+'</div>':'')+(m.opponent?'<div class="small">Mot: '+esc(m.opponent)+'</div>':'')+(m.weight_limit_kg!=null?'<div class="small">Viktgräns: '+esc(m.weight_limit_kg)+' kg</div>':'')+(m.note?'<div class="small muted">'+esc(m.note)+'</div>':'')+
+        ' <button class="btn sec sm" data-mre="'+esc(m.id)+'">Ändra</button> <button class="btn sec sm" data-mrm="'+esc(m.id)+'">Ta bort</button></div>'}).join('');
+    box.innerHTML='<h3 style="margin:0 0 6px">Match</h3><p class="small muted">Lägg in om fightern har en match och när. Analyserna anpassar då förberedelse, nedtrappning och vikt. Utan match antar de ingen.</p>'+(list||'<p class="muted small">Ingen match inlagd.</p>')+
+      '<details class="card" style="margin:8px 0 0"><summary><b id="mfh">+ Lägg in match</b></summary><div class="g2"><div><label for="mfd">Datum</label><input type="date" id="mfd"></div><div><label for="mfw">Viktgräns (kg)</label><input type="number" step="0.1" inputmode="decimal" id="mfw" placeholder="t.ex. 70.3"></div></div>'+
+      '<label for="mfe">Event</label><input id="mfe" placeholder="Gala / arrangör"><label for="mfo">Motståndare</label><input id="mfo" placeholder="Valfritt"><label for="mfn">Anteckning</label><input id="mfn" placeholder="Valfritt"><p id="mfm" class="small"></p><button class="btn sm" id="mfs">Spara match</button></details>';
+    var eid=null,det=box.querySelector('details');
+    box.onclick=function(e){var r=e.target.getAttribute('data-mrm'),c=e.target.getAttribute('data-mre');
+      if(r){e.target.disabled=true;rpc('fp9_match_remove',{p_id:r}).then(function(){matchCard(id)}).catch(function(er){alert(er.message)})}
+      if(c){var m=ms.filter(function(x){return x.id===c})[0];if(m){eid=c;$('mfd').value=m.match_date;$('mfe').value=m.event||'';$('mfo').value=m.opponent||'';$('mfw').value=m.weight_limit_kg==null?'':m.weight_limit_kg;$('mfn').value=m.note||'';$('mfh').textContent='Ändra match';det.open=true}}};
+    $('mfs').onclick=function(){var d=$('mfd').value;if(!d){fail($('mfm'),new Error('Välj datum.'));return}
+      var w=$('mfw').value;this.disabled=true;var b=this;
+      rpc('fp9_match_save',{p_fighter_id:id,p_date:d,p_event:$('mfe').value,p_opponent:$('mfo').value,p_weight_kg:w===''?null:Number(w),p_note:$('mfn').value,p_id:eid}).then(function(){matchCard(id)}).catch(function(er){b.disabled=false;fail($('mfm'),er)})};
+  }).catch(function(er){fail(box,er)});
+}
 function passCard(id,fname){
   var box=$('pc');if(!box)return;
   rpc('fp8_fighter_passes',{p_fighter_id:id,p_days:90}).then(function(days){days=days||[];
@@ -527,7 +545,7 @@ function fighterView(id){
      (f.injury_status?'<p><span class="pill">Skada: '+esc(f.injury_status)+'</span></p>':'')+
      (f.current_training_focus?'<p><b>Fokus:</b> '+esc(f.current_training_focus)+'</p>':'')+
      (f.general_strengths?'<p><b>Styrkor:</b> '+esc(f.general_strengths)+'</p>':'')+(f.general_weaknesses?'<p><b>Svagheter:</b> '+esc(f.general_weaknesses)+'</p>':'')+'</div>'+
-     '<div class="card" id="pc"><p class="muted small">Laddar pass…</p></div>'+
+     '<div class="card" id="mc"><p class="muted small">Laddar match…</p></div>'+'<div class="card" id="pc"><p class="muted small">Laddar pass…</p></div>'+
      '<div class="card" id="an"><p class="muted small">Laddar analys…</p></div>'+
      '<div class="card" id="wk"><p class="muted small">Laddar veckosammanfattning…</p></div>'+
      '<div class="card" id="pf"><p class="muted small">Laddar profil…</p></div>'+
@@ -536,7 +554,7 @@ function fighterView(id){
      '<div class="card"><h3 style="margin-top:0">Incheckningslänk</h3><p class="small muted">Personlig länk fightern använder efter varje pass. Visas bara en gång.</p><label>Adress till fighter_checkin.html</label><input id="lb" type="url" value="'+esc(ls('fp3_base')||'')+'"><p id="lo" class="small"></p><div class="row"><button class="btn sm" id="lc">Skapa ny länk</button><button class="btn sec sm" id="lr">Stäng av länk</button><button class="btn sec sm" id="ls">Sammanställning</button></div></div>'+
      '<div class="card" id="arc"><h3 style="margin-top:0">Arketyper</h3><p class="small muted">En fighter kan ha flera. Välj hur tydligt varje arketyp passar. Hoppa över de som inte passar.</p>'+archHtml(sc)+'<p id="m2" class="small"></p><button class="btn" id="ab">Spara arketyper</button></div>';
     app.innerHTML=h;
-    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};profileCard(id);passCard(id,f.name);weeklyCard(id);analysisCard(id);
+    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};profileCard(id);matchCard(id);passCard(id,f.name);weeklyCard(id);analysisCard(id);
     $('dl').onclick=function(){if(confirm('Radera '+f.name+' och all kopplad data?'))rpc('fp3_delete_fighter',{p_id:id}).then(function(){S.view=null;render()}).catch(function(er){alert(er.message)})};
     $('na').onclick=function(){var t=nz($('nt').value);if(!t){fail($('m1'),new Error('Skriv något'));return}rpc('fp3_add_fighter_note',{p_fighter_id:id,p_category:$('nc').value,p_note:t,p_match_label:nz($('nm').value)}).then(function(){fighterView(id)}).catch(function(er){fail($('m1'),er)})};
     $('nl').onclick=function(e){var r=e.target.getAttribute('data-rm');if(r)rpc('fp3_delete_fighter_note',{p_id:r}).then(function(){fighterView(id)}).catch(function(er){alert(er.message)})};
