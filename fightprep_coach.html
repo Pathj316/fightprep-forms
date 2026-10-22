@@ -379,6 +379,7 @@ var VZ = (function () {
       var s = SK[String(x.sakerhet || '').toLowerCase()] || ['info', 'Säkerhet ej angiven'];
       return '<div class="vz-it ' + s[0] + '"><span class="vz-chip ' + s[0] + '">' + s[1] + '</span> <b>' + esc(x.rubrik) + '</b>' + p(x.slutsats) +
         (x.bevis && x.bevis.length ? '<div class="vz-why">Bygger på: ' + x.bevis.map(esc).join(' · ') + '</div>' : '') +
+        (x.talar_emot ? '<div class="vz-why">Talar emot: ' + esc(x.talar_emot) + '</div>' : '') +
         (x.atgard ? '<div style="margin-top:6px"><b>Gör:</b> ' + esc(x.atgard) + '</div>' : '') + '</div>';
     }).join(''), 'info', true);
     if (ai.hypoteser && ai.hypoteser.length) h += card('Hypoteser att testa', ai.hypoteser.map(function (x) { return '<div class="vz-it work"><b>' + esc(x.hypotes) + '</b>' + (x.testa ? '<div class="vz-why">Så testar du: ' + esc(x.testa) + '</div>' : '') + '</div>'; }).join(''), 'work', true);
