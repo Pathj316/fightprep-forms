@@ -370,10 +370,27 @@ var VZ = (function () {
     return h + '</div>';
   }
 
+  function hm(m) { m = Math.round(m || 0); var h = Math.floor(m / 60), r = m % 60; return h + ' tim' + (r ? ' ' + r + ' min' : ''); }
+  function volume(c) {
+    if (!c || !c.current) return '';
+    var cur = c.current, ks = Object.keys(c.types || {}).filter(function (k) { return c.types[k] > 0; }), tot = 0;
+    ks.forEach(function (k) { tot += c.types[k]; });
+    ks.sort(function (a, b) { return c.types[b] - c.types[a]; });
+    var tr = (c.days || []).filter(function (d) { return d.minutes > 0; }).length, nd = (c.days || []).length;
+    var h = '<p><b>' + hm(cur.minutes) + '</b> på <b>' + cur.sessions + ' pass</b>' + (nd ? ' under ' + nd + ' dagar (' + tr + ' träningsdagar, ' + (nd - tr) + ' vilodagar)' : '') + (cur.avg_rpe != null ? ', snitt RPE ' + cur.avg_rpe + ' av 10' : '') + '.</p>';
+    if (c.previous && c.previous.minutes > 0) h += '<p>Föregående period: ' + hm(c.previous.minutes) + ' på ' + c.previous.sessions + ' pass.</p>';
+    if (tot) h += '<p>Fördelning: ' + ks.map(function (k) { return esc(TN[k] || k) + ' ' + hm(c.types[k]) + ' (' + Math.round(c.types[k] / tot * 100) + ' %)'; }).join(' · ') + '</p>';
+    if (c.weeks && c.weeks.length > 1) h += '<p>Per vecka: ' + c.weeks.map(function (w) { return 'v. ' + esc(String(w.week).slice(5)) + ': ' + hm(w.minutes) + ', ' + w.sessions + ' pass'; }).join(' · ') + '</p>';
+    return h;
+  }
+
   function coach(a) {
     var ai = a.ai || {}, c = a.charts || {}, h = '<div class="vz">';
     h += toggle();
     h += card('Sammanfattning', p(ai.sammanfattning), 'info', true);
+    h += card('Träningsmängd', volume(c), 'info', true);
+    if (ai.viktklass) h += card('Mot viktklassen i allmänhet', p(ai.viktklass), 'info', true);
+    if (ai.fordelning) h += card('Fördelningen av träningen', p(ai.fordelning), 'info', true);
     var SK = { 'hög': ['good', 'Hög säkerhet'], 'medel': ['info', 'Medelhög säkerhet'], 'låg': ['work', 'Låg säkerhet'] };
     if (ai.slutsatser && ai.slutsatser.length) h += card('Slutsatser', ai.slutsatser.map(function (x) {
       var s = SK[String(x.sakerhet || '').toLowerCase()] || ['info', 'Säkerhet ej angiven'];
