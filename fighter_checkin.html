@@ -497,8 +497,19 @@ var VZ = (function () {
   function wfetch(mode) {
     return post('/functions/v1/fighter_weekly', { token: token, mode: mode }).catch(function (e) { throw e; });
   }
+  var HOWCARD = '<div class="card"><details><summary><h2 style="display:inline">Så läser FightPrep din data</h2></summary>' +
+    '<p class="sub" style="margin:10px 0">Det du loggar jämförs mot några saker. Här är vad, och hur säkert det är.</p>' +
+    [['1. Dig själv', 'Din senaste vecka jämförs med dina egna tidigare veckor. Det är den viktigaste jämförelsen, eftersom den bara gäller dig.'],
+     ['2. Din profil', 'Ålder, bakgrund, stil och erfarenhet som din tränare har lagt in. De används för att sätta det du loggar i sitt sammanhang.'],
+     ['3. Din viktklass', 'För din viktklass finns statistik från UFC Performance Institute om hur långa matcher brukar vara och hur ofta de avgörs före domslut. Den gäller elitfighters i UFC 2002–2017, inte amatörer. Använd den som bakgrund, inte som facit för dig.'],
+     ['4. Träningsbelastning', 'Hur mycket du tränat den senaste veckan mot veckorna innan, utifrån minuter och hur hårt det kändes. Det är en grov indikator. Forskarna är oense om var gränserna går, så den läses tillsammans med hur du sover, hur öm du är och hur du mår.'],
+     ['5. Återhämtning', 'Sömn, energi, ömhet och stress jämförs med vad som är normalt för dig.'],
+     ['6. Vikt', 'Om en match är inlagd visas din vikt mot matchens viktgräns. Det är en referens, inte ett råd. Frågor om vikt tar du med din tränare.']
+    ].map(function (x) { return '<div style="border-top:1px solid var(--border);padding:8px 0"><b>' + x[0] + '</b><div class="sub" style="margin:2px 0 0">' + x[1] + '</div></div>'; }).join('') +
+    '<p class="sub" style="margin:10px 0 0"><b>Viktigt:</b> Det här är stöd för samtalet med din tränare, inte en bedömning av dig. Underlaget är litet för vissa jämförelser, och systemet säger det när det är så.</p></details></div>';
+
   function renderWeek() {
-    shell('<div class="card" id="wk"><p class="sub" style="margin:0">Laddar…</p></div><div class="card"><h2>Tidigare analyser</h2>' + (ctx.analyses.length ? ctx.analyses.map(function (a) { return '<div data-wk="' + esc(a.week_start) + '">' + VZ.hist('Vecka från ' + a.week_start, a.summary, false) + '</div>'; }).join('') : '<p class="sub" style="margin:0">Inga än.</p>') + '</div>');
+    shell('<div class="card" id="wk"><p class="sub" style="margin:0">Laddar…</p></div><div class="card"><h2>Tidigare analyser</h2>' + (ctx.analyses.length ? ctx.analyses.map(function (a) { return '<div data-wk="' + esc(a.week_start) + '">' + VZ.hist('Vecka från ' + a.week_start, a.summary, false) + '</div>'; }).join('') : '<p class="sub" style="margin:0">Inga än.</p>') + '</div>' + HOWCARD);
     var box = $('wk');
     function draw(j) {
       if (j.summary) { var dup = document.querySelector('[data-wk="' + j.week_start + '"]'); if (dup) dup.remove(); box.innerHTML = '<h2>Din veckoanalys</h2><p class="sub" style="margin:0 0 10px">' + esc(j.week_start) + ' till ' + esc(j.week_end) + '</p><div class="txt">' + VZ.render(j.summary) + '</div>'; return; }
