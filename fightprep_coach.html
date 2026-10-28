@@ -230,6 +230,7 @@ textarea{min-height:76px;resize:vertical}
 #dash.mob .pgrid,#dash.mob .lg{grid-template-columns:1fr}
 #dash.mob .dhr{grid-template-columns:90px 1fr 100px}
 #dash.mob #p-layers{overflow:visible}
+.fold>:first-child h3,.fold>h3:first-child{cursor:pointer}.fold>:first-child h3:after,.fold>h3:first-child:after{content:' ▾';color:var(--muted)}.fold.cl>:first-child h3:after,.fold.cl>h3:first-child:after{content:' ▸'}.fold.cl>*:not(:first-child){display:none}
 </style>
 </head>
 <body>
@@ -782,16 +783,16 @@ function fighterView(id){
      (f.injury_status?'<p><span class="pill">Skada: '+esc(f.injury_status)+'</span></p>':'')+
      (f.current_training_focus?'<p><b>Fokus:</b> '+esc(f.current_training_focus)+'</p>':'')+
      (f.general_strengths?'<p><b>Styrkor:</b> '+esc(f.general_strengths)+'</p>':'')+(f.general_weaknesses?'<p><b>Svagheter:</b> '+esc(f.general_weaknesses)+'</p>':'')+'</div>'+
-     '<div class="card" id="mc"><p class="muted small">Laddar match…</p></div>'+'<div class="card" id="pc"><p class="muted small">Laddar pass…</p></div>'+
-     '<div class="card" id="an"><p class="muted small">Laddar analys…</p></div>'+
-     '<div class="card" id="wk"><p class="muted small">Laddar veckosammanfattning…</p></div>'+
-     '<div class="card" id="pf"><p class="muted small">Laddar profil…</p></div>'+
+     '<div class="card fold cl" id="mc"><p class="muted small">Laddar match…</p></div>'+'<div class="card fold cl" id="pc"><p class="muted small">Laddar pass…</p></div>'+
+     '<div class="card fold cl" id="an"><p class="muted small">Laddar analys…</p></div>'+
+     '<div class="card fold cl" id="wk"><p class="muted small">Laddar veckosammanfattning…</p></div>'+
+     '<div class="card fold cl" id="pf"><p class="muted small">Laddar profil…</p></div>'+
      '<div class="card"><h3 style="margin-top:0">Anteckningar</h3><div id="nl">'+(notes.map(function(n){return '<div class="note"><q>'+esc(CN[n.category]||n.category)+(n.match_label?' · '+esc(n.match_label):'')+'</q>'+esc(n.note)+' <button class="btn sec sm" data-rm="'+esc(n.id)+'">Ta bort</button></div>'}).join('')||'<p class="muted small">Inga.</p>')+'</div>'+
      '<label>Kategori</label><select id="nc">'+opts(CATS,'striking')+'</select><label>Match (valfritt)</label><input id="nm"><label>Anteckning</label><textarea id="nt"></textarea><p id="m1" class="small"></p><button class="btn" id="na">Lägg till</button></div>'+
      '<div class="card"><h3 style="margin-top:0">Incheckningslänk</h3><p class="small muted">Personlig länk fightern använder efter varje pass. Visas bara en gång.</p><label>Adress till fighter_checkin.html</label><input id="lb" type="url" value="'+esc(ls('fp3_base')||'')+'"><p id="lo" class="small"></p><div class="row"><button class="btn sm" id="lc">Skapa ny länk</button><button class="btn sec sm" id="lr">Stäng av länk</button><button class="btn sec sm" id="ls">Sammanställning</button></div></div>'+
      '<div class="card" id="arc"><h3 style="margin-top:0">Arketyper</h3><p class="small muted">En fighter kan ha flera. Välj hur tydligt varje arketyp passar. Hoppa över de som inte passar.</p>'+archHtml(sc)+'<p id="m2" class="small"></p><button class="btn" id="ab">Spara arketyper</button></div>';
     app.innerHTML=h;
-    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};$('dsb').onclick=function(){dashOpen(id,f)};profileCard(id);matchCard(id);passCard(id,f.name);weeklyCard(id);analysisCard(id);
+    $('bk').onclick=function(){S.view=null;render()};$('ed').onclick=function(){fighterEdit(f)};$('dsb').onclick=function(){dashOpen(id,f)};Array.prototype.forEach.call(app.querySelectorAll('.fold'),function(bx){bx.onclick=function(e){var h=e.target.closest&&e.target.closest('h3');if(h&&(bx.firstElementChild===h||bx.firstElementChild.contains(h))){bx.classList.toggle('cl');return}if(bx.classList.contains('cl')&&e.target.closest&&e.target.closest('button'))setTimeout(function(){bx.classList.remove('cl')},0)}});profileCard(id);matchCard(id);passCard(id,f.name);weeklyCard(id);analysisCard(id);
     $('dl').onclick=function(){if(confirm('Radera '+f.name+' och all kopplad data?'))rpc('fp3_delete_fighter',{p_id:id}).then(function(){S.view=null;render()}).catch(function(er){alert(er.message)})};
     $('na').onclick=function(){var t=nz($('nt').value);if(!t){fail($('m1'),new Error('Skriv något'));return}rpc('fp3_add_fighter_note',{p_fighter_id:id,p_category:$('nc').value,p_note:t,p_match_label:nz($('nm').value)}).then(function(){fighterView(id)}).catch(function(er){fail($('m1'),er)})};
     $('nl').onclick=function(e){var r=e.target.getAttribute('data-rm');if(r)rpc('fp3_delete_fighter_note',{p_id:r}).then(function(){fighterView(id)}).catch(function(er){alert(er.message)})};
@@ -1185,7 +1186,7 @@ function dashBuild(){
   var M=DSH.m=dashModel(),D=DSH.data;
   var span=dashSpan(M);
   var info=$('dinfo');
-  info.innerHTML=M.first==null?'<b>Ingen träningsdata inlagd än</b>':'Riktig data · '+dsh(M.first)+' – '+dsh(M.last)+' · '+M.P.length+' pass';
+  info.innerHTML=M.first==null?'<b>Ingen träningsdata inlagd än</b>':'Riktig data · '+dsh(M.first)+' – '+dsh(M.last)+' · '+M.P.length+' pass · v3';
   var vis=DRNG.filter(function(r,i){return r[0]==='all'||span>(i?DRNG[i-1][2]:0)});
   if(vis.length>1&&vis[vis.length-2]&&vis[vis.length-2][2]>=span)vis.splice(vis.length-2,1);
   $('drng').innerHTML=vis.map(function(r){return '<button data-r="'+r[0]+'"'+(r[0]===DSH.range?' class="on"':'')+'>'+r[1]+'</button>'}).join('');
@@ -1216,7 +1217,8 @@ function dashPanels(M){
   return ps;
 }
 
-function dashDraw(){
+function dashDraw(){try{dashDraw2()}catch(e){var m=document.getElementById('dinfo');if(m)m.innerHTML='<span style="color:#fbbf24">Fel i diagram: '+esc(e.message)+'</span>'}}
+function dashDraw2(){
   var M=DSH.m;if(!M)return;var D=DSH.data,R=dashRange(M),Pv=dashPrev(R);
   var t=DSH.tab,P=M.P,A=R.from,Bz=R.to;
   var q=function(c){return document.querySelector('#dmain .panel.on [data-c="'+c+'"]')};
