@@ -103,6 +103,118 @@ h2{font-size:1.1rem;margin:0 0 8px}
 .vz-tg{margin:0 0 10px;text-align:right}
 .vz-btn{background:transparent;border:1px solid var(--border,#d5dbe3);color:inherit;border-radius:8px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer;min-height:36px}
 .vz-card p+p{margin-top:8px}
+/* ===== Dashboard ===== */
+#dash{position:fixed;inset:0;z-index:9999;background:#000;--bg:#050a07;--surface:#0b1710;--text:#e9f4ec;--muted:#77957f;--border:#1b3326;--chip:#10201a;--ok:#34d399;--danger:#f97316;--accent:#1f9d5c;color:#e9f4ec;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+#dash *{box-sizing:border-box}
+#dash button{font:inherit;color:inherit;cursor:pointer}
+#dash .dapp{position:absolute;left:0;top:0;width:1366px;height:768px;transform-origin:0 0;background:#050a07;display:grid;grid-template-rows:auto auto 1fr;min-height:0}
+#dash .dhdr{display:flex;align-items:center;gap:16px;padding:9px 20px;background:#08110c;border-bottom:1px solid #1b3326}
+#dash .dlogo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:19px}
+#dash .dlogo i{width:24px;height:24px;border-radius:7px;background:#1f9d5c;display:grid;place-items:center;font-style:normal;font-size:15px;color:#fff}
+#dash .dchip{display:flex;align-items:center;gap:10px;padding:4px 14px 4px 5px;border-radius:99px;background:#0b1710;border:1px solid #1b3326}
+#dash .dav{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#1f9d5c,#0f6b3a);display:grid;place-items:center;font-weight:800;font-size:14px;color:#fff}
+#dash .dchip b{display:block;font-size:15px;line-height:1.1}#dash .dchip small{font-size:13px;color:#77957f}
+#dash .dinfo{font-size:13px;color:#a9c4b4;max-width:360px;line-height:1.3}
+#dash .drng{margin-left:auto;display:flex;background:#0b1710;border:1px solid #1b3326;border-radius:10px;padding:3px}
+#dash .drng button{background:none;border:0;padding:5px 13px;border-radius:7px;color:#a9c4b4;font-weight:600;font-size:14px}
+#dash .drng button.on{background:#1f9d5c;color:#fff}
+#dash .dx{background:#0b1710;border:1px solid #1b3326;border-radius:10px;padding:7px 14px;font-weight:600;color:#e9f4ec}
+#dash .dtabs{display:flex;gap:2px;padding:0 14px;background:#08110c;border-bottom:1px solid #1b3326;overflow-x:auto}
+#dash .dtabs button{background:none;border:0;border-bottom:3px solid transparent;padding:11px 16px;color:#a9c4b4;font-weight:600;font-size:15px;white-space:nowrap}
+#dash .dtabs button.on{color:#fff;border-bottom-color:#1f9d5c}
+#dash main{min-height:0;position:relative;max-width:none;margin:0;padding:0;width:auto}
+#dash .dload{padding:30px;color:#a9c4b4}
+#dash .panel{position:absolute;inset:0;padding:14px 20px;display:none;min-height:0;gap:12px}
+#dash .panel.on{display:grid}
+#dash .dcard{background:#0b1710;border:1px solid #1b3326;border-radius:14px;padding:12px 16px;min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+#dash .dcard h3{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:#77957f;font-weight:700}
+#dash .sub{font-size:13px;color:#77957f;margin:2px 0 6px}
+#dash .chart{flex:1;min-height:0;position:relative;overflow:hidden}
+#dash .chart svg{display:block}
+#dash svg text{font-family:inherit;fill:#77957f;font-size:12.5px}
+#dash .dnd{height:100%;display:grid;place-items:center;color:#77957f;font-size:14px;text-align:center;padding:8px}
+#dash .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:#a9c4b4;margin-top:6px}
+#dash .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+#dash .mut{color:#77957f;font-size:13.5px}
+#dash .fn{font-size:12.5px;color:#77957f;margin:6px 0 0}
+#dash .chip{display:inline-block;font-size:12.5px;font-weight:700;padding:1px 8px;border-radius:99px;background:rgba(34,164,93,.18);color:#7fe0a8}
+#dash .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+#dash .kpi{background:#0b1710;border:1px solid #1b3326;border-radius:14px;padding:10px 14px;min-width:0}
+#dash .kpi .l{font-size:12.5px;text-transform:uppercase;letter-spacing:.09em;color:#77957f;font-weight:700}
+#dash .kpi .v{font-size:27px;font-weight:800;line-height:1.15}#dash .kpi .v small{font-size:14px;font-weight:600;color:#a9c4b4}
+#dash .kpi .d{font-size:12.5px;color:#a9c4b4;min-height:18px}
+#dash .up{color:#fbbf24}#dash .dn{color:#7fe0a8}#dash .flat{color:#77957f}
+#dash #p-overview{grid-template-rows:auto 1fr 170px}
+#dash #p-overview .mid{display:grid;grid-template-columns:1.9fr 1fr;gap:12px;min-height:0}
+#dash #p-overview .bot{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;min-height:0}
+#dash .ai{display:flex;flex-direction:column;gap:8px;overflow:auto}
+#dash .ai p{margin:0;font-size:15px;line-height:1.5;color:#e9f4ec}
+#dash .link{color:#7fe0a8;background:none;border:0;padding:0;font-weight:600;text-align:left}
+#dash #p-training{grid-template-columns:1fr 2.2fr;grid-template-rows:1fr 1fr}
+#dash #p-training .t1{grid-row:1/3;display:flex;flex-direction:column;min-height:0}#dash #p-training .t1>.dcard,#dash #p-training .t2>.dcard{flex:1}
+#dash #p-training .t2{display:flex;min-height:0}#dash #p-training .t2>.dcard{width:100%}
+#dash #p-training .rt{grid-column:2;display:grid;grid-template-columns:1.5fr 1fr;gap:12px;min-height:0}
+#dash .nl{overflow:auto;flex:1;min-height:0}
+#dash .nt{border-top:1px solid #1b3326;padding:7px 0;font-size:14px;color:#a9c4b4}#dash .nt:first-child{border-top:0}
+#dash .nt b{color:#e9f4ec}
+#dash .dh{display:flex;flex-direction:column;gap:12px;padding-top:6px}
+#dash .dhr{display:grid;grid-template-columns:110px 1fr 120px;gap:10px;align-items:center;font-size:14px}
+#dash .dhl i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+#dash .dhb{background:#10201a;border-radius:6px;height:14px;overflow:hidden;display:block}#dash .dhb b{display:block;height:100%;border-radius:6px}
+#dash .dhv{color:#a9c4b4;font-size:13px;text-align:right}
+#dash #p-body{grid-template-columns:1fr 1fr 300px;grid-template-rows:1fr 1fr}
+#dash #p-body .tbl{grid-column:3;grid-row:1/3;display:flex;flex-direction:column;min-height:0}#dash #p-body .tbl>.dcard{flex:1}
+#dash #p-weight{grid-template-columns:2.1fr 1fr;grid-template-rows:auto 1fr}
+#dash #p-weight .wk{grid-column:1;grid-row:1/3;display:flex;min-height:0}#dash #p-weight .wk>.dcard{width:100%}
+#dash #p-weight>div{min-height:0;display:flex}#dash #p-weight>div>.dcard{width:100%}
+#dash .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+#dash .stat{background:#10201a;border:1px solid #1b3326;border-radius:10px;padding:8px 11px}
+#dash .stat b{display:block;font-size:20px}#dash .stat span{font-size:13px;color:#77957f}
+#dash #p-analysis{grid-template-columns:360px 1fr}
+#dash #p-analysis>div{min-height:0;display:flex}#dash #p-analysis>div>.dcard{width:100%}
+#dash .list,#dash .det{overflow:auto;flex:1;min-height:0;margin-top:6px}
+#dash .list .it{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid #1b3326;border-radius:11px;margin-bottom:8px;background:#10201a;text-align:left;width:100%}
+#dash .list .it.on{border-color:#1f9d5c;background:#10301f}
+#dash .list .n{flex:none;width:22px;height:22px;border-radius:7px;background:#1b3326;display:grid;place-items:center;font-size:13px;font-weight:800}
+#dash .list .t{flex:1;font-weight:600;font-size:14px}#dash .list small{color:#77957f;font-weight:400}
+#dash #p-layers{display:block;overflow:auto}
+#dash .lg{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;align-items:start}
+#dash .lg .card{background:#0b1710;border:1px solid #1b3326;border-radius:14px;padding:12px 16px;margin:0}
+#dash #p-profile{grid-template-columns:320px 1fr}
+#dash #p-profile>div:first-child{min-height:0;display:flex}#dash #p-profile>div:first-child>.dcard{width:100%;overflow:auto}
+#dash .facts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+#dash .facts div{background:#10201a;border:1px solid #1b3326;border-radius:10px;padding:8px 10px;min-width:0}
+#dash .facts span{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#77957f}#dash .facts b{font-size:16px;overflow-wrap:anywhere}
+#dash .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;overflow:auto;min-height:0}
+#dash .ptxt{margin:8px 0 0;font-size:15.5px;line-height:1.55;color:#a9c4b4;white-space:pre-wrap}
+/* lagrens och analysens återanvända kort, mörkt */
+#dash .vz-card,#dash .vz-it{color:#e9f4ec}
+/* mobil: samma layout, staplad */
+#dash.mob{overflow:auto;-webkit-overflow-scrolling:touch}
+#dash.mob .dapp{position:relative;width:100%!important;height:auto!important;min-height:100%;display:block}
+#dash.mob .dhdr{flex-wrap:wrap;gap:8px 10px;padding:8px 12px;position:sticky;top:0;z-index:3}
+#dash.mob .dinfo{order:5;flex-basis:100%;max-width:none}
+#dash.mob .drng{margin-left:0}#dash.mob .dx{margin-left:auto}
+#dash.mob .dtabs{position:sticky;top:0;z-index:2}
+#dash.mob main{position:static}
+#dash.mob .panel{position:static;padding:12px;display:none!important;grid-template-columns:1fr!important;grid-template-rows:none!important}
+#dash.mob .panel.on{display:grid!important}
+#dash.mob .kpis{grid-template-columns:1fr 1fr}
+#dash.mob .kpi .v{font-size:24px}
+#dash.mob #p-overview .mid,#dash.mob #p-overview .bot,#dash.mob #p-training .rt{grid-template-columns:1fr}
+#dash.mob #p-training .rt,#dash.mob #p-body .tbl,#dash.mob #p-training .t1{grid-column:auto;grid-row:auto}
+#dash.mob .chart{flex:none;height:210px}
+#dash.mob .dcard>h3{cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:2px 0}
+#dash.mob .dcard>h3:after{content:'▾';font-size:15px;color:#a9c4b4}
+#dash.mob .dcard.cl>h3:after{content:'▸'}
+#dash.mob .dcard.cl>*:not(h3){display:none}
+#dash.mob .dcard.cl{padding-bottom:10px}
+#dash.mob .nl,#dash.mob .list,#dash.mob .det{max-height:360px}
+#dash.mob #p-profile>div:first-child>.dcard{overflow:visible}
+#dash.mob .pgrid,#dash.mob .lg{grid-template-columns:1fr}
+#dash.mob .dhr{grid-template-columns:90px 1fr 100px}
+#dash.mob #p-layers{overflow:visible}
+.fold>:first-child h3,.fold>h3:first-child{cursor:pointer}.fold>:first-child h3:after,.fold>h3:first-child:after{content:' ▾';color:var(--muted)}.fold.cl>:first-child h3:after,.fold.cl>h3:first-child:after{content:' ▸'}.fold.cl>*:not(:first-child){display:none}
 </style>
 </head>
 <body>
@@ -381,10 +493,10 @@ var VZ = (function () {
   }
 
   function shell(inner) {
-    var tabs = [['today', 'Idag'], ['mine', 'Mina pass'], ['week', 'Analys']];
+    var tabs = [['today', 'Idag'], ['mine', 'Mina pass'], ['week', 'Analys'], ['dash', 'Dashboard']];
     app.innerHTML = '<h1>Hej ' + esc(ctx.name || '') + '!</h1><p class="sub">Din träning. Det du skriver här sparas på din profil, och bara du och din tränare kan se det.</p>' +
       '<div class="nav" role="tablist">' + tabs.map(function (t) { return '<button type="button" data-tab="' + t[0] + '"' + (tab === t[0] ? ' aria-current="true"' : '') + '>' + t[1] + '</button>'; }).join('') + '</div>' + inner;
-    Array.prototype.forEach.call(app.querySelectorAll('.nav button'), function (b) { b.onclick = function () { tab = b.getAttribute('data-tab'); render(); }; });
+    Array.prototype.forEach.call(app.querySelectorAll('.nav button'), function (b) { b.onclick = function () { var t = b.getAttribute('data-tab'); if (t === 'dash') { dashOpen(); return; } tab = t; render(); }; });
   }
 
   function render() {
@@ -392,6 +504,224 @@ var VZ = (function () {
     if (tab === 'week') return renderWeek();
     return renderToday();
   }
+
+/* ---------- Dashboard (ny vy, bara läsning, ändrar ingen data) ---------- */
+var DT={striking:['Striking','#f59e0b'],grappling:['Grappling','#a78bfa'],mma:['MMA','#60a5fa'],kondition:['Kondition','#14b8a6'],styrka:['Styrka','#e2e8f0'],wrestling:['Brottning','#a3e635'],sparring:['Sparring','#f472b6'],annat:['Annat','#64748b']};
+function dtl(k){return (DT[k]||[k])[0]}
+function dtc(k){return (DT[k]||[k,'#94a3b8'])[1]}
+function dn(s){var p=String(s).slice(0,10).split('-');return Date.UTC(+p[0],+p[1]-1,+p[2])/864e5}
+function dstr(n){var d=new Date(n*864e5);return d.getUTCFullYear()+'-'+('0'+(d.getUTCMonth()+1)).slice(-2)+'-'+('0'+d.getUTCDate()).slice(-2)}
+var DMON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+function dsh(n){var s=dstr(n).split('-');return +s[2]+' '+DMON[+s[1]-1]}
+function dsum(a){return a.reduce(function(x,y){return x+y},0)}
+function d1(v){return v==null||isNaN(v)?'–':(Math.round(v*10)/10).toString().replace('.',',')}
+function dniceMax(v){if(v<=0)return 1;var e=Math.pow(10,Math.floor(Math.log(v)/Math.LN10)),m=v/e;return (m<=1?1:m<=2?2:m<=5?5:10)*e}
+
+var DSH={m:null,range:'all',tab:'overview',data:null};
+var DTABS=[['overview','Översikt'],['training','Träning'],['body','Kropp'],['weight','Vikt & match']];
+var DRNG=[['7','1V',7],['28','4V',28],['84','12V',84],['182','6M',182],['all','Allt',0]];
+
+function dashOpen(){
+  var old=document.getElementById('dash');if(old)old.remove();
+  var el=document.createElement('div');el.id='dash';
+  el.innerHTML='<div class="dapp"><div class="dhdr"><div class="dlogo"><i>F</i>FightPrep</div><div class="dchip"><span class="dav">'+esc((ctx.name||'?').slice(0,1).toUpperCase())+'</span><span><b>'+esc(ctx.name||'')+'</b><small>Din dashboard</small></span></div><div class="dinfo" id="dinfo"></div><div class="drng" id="drng"></div><button class="dx" id="dclose">✕ Stäng</button></div><div class="dtabs" id="dtabs"></div><main id="dmain"><p class="dload">Hämtar data…</p></main></div>';
+  document.body.appendChild(el);document.body.style.overflow='hidden';
+  $('dclose').onclick=dashClose;
+  window.addEventListener('resize',dashFit);document.addEventListener('keydown',dashKey);
+  dashFit();
+  rpc('fp11_fighter_dash',{p_token:token,p_days:400}).then(function(r){
+    if(!r||!r.ok)throw new Error('ogiltig länk');
+    DSH.data=r;DSH.tab='overview';DSH.range='all';dashBuild();
+  }).catch(function(er){var m=$('dmain');if(m)m.innerHTML='<p class="dload">Kunde inte hämta data: '+esc(er.message)+'</p>'});
+}
+function dashClose(){var e=document.getElementById('dash');if(e)e.remove();document.body.style.overflow='';window.removeEventListener('resize',dashFit);document.removeEventListener('keydown',dashKey)}
+function dashKey(e){if(e.key==='Escape')dashClose()}
+function dashMob(){return window.innerWidth<900}
+function dashFit(){
+  var a=document.querySelector('#dash .dapp');if(!a)return;var d=document.getElementById('dash');
+  if(dashMob()){d.className='mob';a.style.transform='';a.style.left=a.style.top='0';a.style.width='';a.style.height=''}
+  else{d.className='';var s=Math.min(window.innerWidth/1366,window.innerHeight/768);a.style.width='1366px';a.style.height='768px';a.style.transform='scale('+s+')';a.style.left=((window.innerWidth-1366*s)/2)+'px';a.style.top=((window.innerHeight-768*s)/2)+'px'}
+  if(DSH.m)dashDraw();
+}
+function dashModel(){
+  var D=DSH.data,P=[];
+  D.passes.forEach(function(p){var rpe=p.rpe==null?null:Number(p.rpe),mi=p.minutes==null?null:Number(p.minutes);
+    P.push({n:dn(p.date),rpe:rpe,min:mi,load:(rpe!=null&&mi!=null)?rpe*mi:0,types:(p.types&&p.types.length?p.types:['annat'])})});
+  var W=D.daily.map(function(x){return{n:dn(x.date),sleep_h:x.sleep_h==null?null:Number(x.sleep_h),sleep:x.sleep,energy:x.energy,soreness:x.soreness,stress:x.stress,weight:x.weight==null?null:Number(x.weight)}});
+  var all=P.map(function(p){return p.n}).concat(W.map(function(w){return w.n}));
+  return{P:P,W:W,first:all.length?Math.min.apply(null,all):null,last:all.length?Math.max.apply(null,all):null,today:dn(D.today)};
+}
+function dashSpan(M){var t=M.today;return M.first==null?0:t-M.first+1}
+function dashRange(M){
+  var r=DRNG.filter(function(x){return x[0]===DSH.range})[0];
+  var from=(r&&r[2])?M.today-r[2]+1:(M.first==null?M.today:M.first);
+  if(r&&r[2]&&M.first!=null&&from<M.first&&false)from=M.first;
+  return {from:from,to:M.today,len:M.today-from+1,fixed:!!(r&&r[2])};
+}
+function dashPrev(R){return R.fixed?{from:R.from-R.len,to:R.from-1}:null}
+function inR(n,a,b){return n>=a&&n<=b}
+function dstats(M,a,b){
+  var p=M.P.filter(function(x){return inR(x.n,a,b)}),rp=p.filter(function(x){return x.rpe!=null});
+  var days={};p.forEach(function(x){days[x.n]=1});
+  return{sessions:p.length,minutes:dsum(p.map(function(x){return x.min||0})),load:dsum(p.map(function(x){return x.load})),rpe:rp.length?dsum(rp.map(function(x){return x.rpe}))/rp.length:null,days:Object.keys(days).length};
+}
+function dbuckets(a,b){ // dagar om <=70, annars veckor (måndag)
+  var B=[],len=b-a+1,weekly=len>70;
+  if(!weekly){for(var n=a;n<=b;n++)B.push({a:n,b:n,l:dsh(n)})}
+  else{var st=a-(((a+3)%7));/* 1970-01-01 var torsdag */for(var s=st;s<=b;s+=7)B.push({a:Math.max(s,a),b:Math.min(s+6,b),l:dsh(s)})}
+  return {B:B,weekly:weekly};
+}
+function dsplit(p){var t=p.types,m=(p.min||0)/t.length;return t.map(function(k){return[k,m]})}
+
+/* ---- diagram ---- */
+function dcb(el){return{w:Math.max(el.clientWidth,60),h:Math.max(el.clientHeight,60)}}
+function dnd(el,t){el.innerHTML='<div class="dnd">'+(t||'Ingen data för perioden')+'</div>'}
+function dyAxis(L,T,iw,ih,mx,mn,fmt){var o='';for(var i=0;i<=4;i++){var y=T+ih-ih*i/4,v=mn+(mx-mn)*i/4;o+='<line x1="'+L+'" x2="'+(L+iw)+'" y1="'+y+'" y2="'+y+'" stroke="#1b3326"/><text x="'+(L-5)+'" y="'+(y+4)+'" text-anchor="end">'+(fmt?fmt(v):d1(v))+'</text>'}return o}
+function dbar(el,B,series,unit){
+  var s=dcb(el),W=s.w,H=s.h,L=40,R=6,T=8,Bt=22,iw=W-L-R,ih=H-T-Bt;
+  var tot=B.map(function(_,i){return dsum(series.map(function(x){return x.v[i]||0}))});
+  if(!tot.some(function(v){return v>0}))return dnd(el);
+  var mx=dniceMax(Math.max.apply(null,tot)),bw=iw/B.length,g=Math.min(bw*.22,6),o='<svg width="'+W+'" height="'+H+'">'+dyAxis(L,T,iw,ih,mx,0,function(v){return Math.round(v)});
+  B.forEach(function(b,i){var y=T+ih,x=L+i*bw+g/2;series.forEach(function(se){var v=se.v[i]||0;if(v<=0)return;var h=ih*v/mx;y-=h;o+='<rect x="'+x+'" y="'+y+'" width="'+Math.max(bw-g,1)+'" height="'+h+'" fill="'+se.c+'"><title>'+esc(b.l+' · '+se.n+': '+Math.round(v)+(unit||''))+'</title></rect>'});});
+  var step=Math.max(1,Math.ceil(52/bw));B.forEach(function(b,i){if(i%step===0)o+='<text x="'+(L+i*bw+bw/2)+'" y="'+(H-6)+'" text-anchor="middle">'+esc(b.l)+'</text>'});
+  el.innerHTML=o+'</svg>';
+}
+function dline(el,pts,opt){
+  opt=opt||{};var s=dcb(el),W=s.w,H=s.h,L=opt.L||40,R=14,T=opt.vl&&opt.vl.length?22:10,Bt=22,iw=W-L-R,ih=H-T-Bt;
+  pts=pts.filter(function(p){return p.y!=null&&!isNaN(p.y)});
+  if(!pts.length)return dnd(el,opt.empty);
+  var ys=pts.map(function(p){return p.y}).concat((opt.hl||[]).map(function(h){return h.y}));
+  var mn=opt.min!=null?opt.min:Math.min.apply(null,ys),mx=opt.max!=null?opt.max:Math.max.apply(null,ys);
+  if(opt.min==null||opt.max==null){var pad=(mx-mn)*.15||1;if(opt.min==null)mn-=pad;if(opt.max==null)mx+=pad}
+  var x0=opt.x0,x1=opt.x1;if(x0==null){x0=Math.min.apply(null,pts.map(function(p){return p.x}));x1=Math.max.apply(null,pts.map(function(p){return p.x}))}
+  if(x1<=x0)x1=x0+1;
+  var X=function(x){return L+iw*(x-x0)/(x1-x0)},Y=function(y){return T+ih-ih*(y-mn)/(mx-mn)};
+  var o='<svg width="'+W+'" height="'+H+'">'+dyAxis(L,T,iw,ih,mx,mn,opt.fmt);
+  (opt.hl||[]).forEach(function(h){if(h.y<mn||h.y>mx)return;o+='<line x1="'+L+'" x2="'+(L+iw)+'" y1="'+Y(h.y)+'" y2="'+Y(h.y)+'" stroke="'+(h.c||'#fbbf24')+'" stroke-dasharray="5 4"/><text x="'+(L+iw-2)+'" y="'+(Y(h.y)-4)+'" text-anchor="end" style="fill:'+(h.c||'#fbbf24')+'">'+esc(h.t||'')+'</text>'});
+  (opt.vl||[]).forEach(function(v){if(v.x<x0||v.x>x1)return;o+='<line x1="'+X(v.x)+'" x2="'+X(v.x)+'" y1="'+T+'" y2="'+(T+ih)+'" stroke="#fbbf24" stroke-dasharray="3 4"/><text x="'+X(v.x)+'" y="'+(T-6)+'" text-anchor="'+(X(v.x)>L+iw-50?'end':'middle')+'" style="fill:#fbbf24">'+esc(v.t)+'</text>'});
+  var steps=Math.max(2,Math.min(6,Math.floor(iw/80)));for(var i=0;i<=steps;i++){var xv=x0+(x1-x0)*i/steps;o+='<text x="'+X(xv)+'" y="'+(H-6)+'" text-anchor="'+(i===0?'start':i===steps?'end':'middle')+'">'+dsh(Math.round(xv))+'</text>'}
+  var dpath=pts.map(function(p,i){return(i?'L':'M')+X(p.x).toFixed(1)+' '+Y(p.y).toFixed(1)}).join('');
+  if(pts.length>1)o+='<path d="'+dpath+'" fill="none" stroke="'+(opt.c||'#34d399')+'" stroke-width="2.4" stroke-linejoin="round"/>';
+  pts.forEach(function(p){o+='<circle cx="'+X(p.x)+'" cy="'+Y(p.y)+'" r="'+(pts.length>60?2:3.5)+'" fill="'+(opt.c||'#34d399')+'"><title>'+esc(dsh(p.x)+': '+(opt.fmt?opt.fmt(p.y):d1(p.y))+(opt.unit||''))+'</title></circle>'});
+  el.innerHTML=o+'</svg>';
+}
+function dline2(el,sa,sb,opt){ // två serier på samma axel
+  var merged=sa.concat(sb);if(!merged.length)return dnd(el);
+  if(!sa.length){dline(el,sb,Object.assign({},opt,{c:opt.c2}));return}
+  dline(el,sa,opt);
+  var svg=el.querySelector('svg');if(!svg)return;
+  var s=dcb(el),W=s.w,H=s.h,L=opt.L||40,R=14,T=10,Bt=22,iw=W-L-R,ih=H-T-Bt,mn=opt.min,mx=opt.max;
+  var X=function(x){return L+iw*(x-opt.x0)/(opt.x1-opt.x0||1)},Y=function(y){return T+ih-ih*(y-mn)/(mx-mn)};
+  var o='';if(sb.length>1)o+='<path d="'+sb.map(function(p,i){return(i?'L':'M')+X(p.x).toFixed(1)+' '+Y(p.y).toFixed(1)}).join('')+'" fill="none" stroke="'+opt.c2+'" stroke-width="2.4"/>';
+  sb.forEach(function(p){o+='<circle cx="'+X(p.x)+'" cy="'+Y(p.y)+'" r="3.5" fill="'+opt.c2+'"><title>'+esc(dsh(p.x)+': '+d1(p.y))+'</title></circle>'});
+  svg.insertAdjacentHTML('beforeend',o);
+}
+function dhbars(el,rows){ // [{l,v,c,t}]
+  var tot=dsum(rows.map(function(r){return r.v}));if(!tot)return dnd(el);
+  var mx=Math.max.apply(null,rows.map(function(r){return r.v}));
+  el.innerHTML='<div class="dh">'+rows.map(function(r){return '<div class="dhr"><span class="dhl"><i style="background:'+r.c+'"></i>'+esc(r.l)+'</span><span class="dhb"><b style="width:'+Math.max(2,Math.round(100*r.v/mx))+'%;background:'+r.c+'"></b></span><span class="dhv">'+esc(r.t)+'</span></div>'}).join('')+'</div>';
+}
+
+function dkpi(l,v,u,d,cls){return '<div class="kpi"><div class="l">'+l+'</div><div class="v">'+v+(u?' <small>'+u+'</small>':'')+'</div><div class="d '+(cls||'')+'">'+(d||'&nbsp;')+'</div></div>'}
+function ddelta(cur,prev,unit,inv){if(prev==null||cur==null||!prev)return['',''];var p=Math.round((cur/prev-1)*100);return[(p>0?'+':'')+p+' % mot föregående period',p===0?'flat':(p>0)!==!!inv?'up':'dn']}
+function dcard(t,sub,body,cls){return '<div class="dcard cl '+(cls||'')+'"><h3>'+t+'</h3>'+(sub?'<div class="sub">'+sub+'</div>':'')+body+'</div>'}
+function dchart(id){return '<div class="chart" data-c="'+id+'"></div>'}
+function dleg(keys){return '<div class="legend">'+keys.map(function(k){return '<span><i style="background:'+dtc(k)+'"></i>'+esc(dtl(k))+'</span>'}).join('')+'</div>'}
+function dashBuild(){
+  var M=DSH.m=dashModel();
+  var span=dashSpan(M);
+  var info=$('dinfo');
+  info.innerHTML=M.first==null?'<b>Ingen träningsdata inlagd än</b>':'Din data · '+dsh(M.first)+' – '+dsh(M.last)+' · '+M.P.length+' pass';
+  var vis=DRNG.filter(function(r,i){return r[0]==='all'||span>(i?DRNG[i-1][2]:0)});
+  if(vis.length>1&&vis[vis.length-2]&&vis[vis.length-2][2]>=span)vis.splice(vis.length-2,1);
+  $('drng').innerHTML=vis.map(function(r){return '<button data-r="'+r[0]+'"'+(r[0]===DSH.range?' class="on"':'')+'>'+r[1]+'</button>'}).join('');
+  if(vis.length<2)$('drng').innerHTML='';
+  $('drng').onclick=function(e){var r=e.target.getAttribute('data-r');if(r){DSH.range=r;[].forEach.call($('drng').children,function(b){b.className=b.getAttribute('data-r')===r?'on':''});dashDraw()}};
+  $('dtabs').innerHTML=DTABS.map(function(t){return '<button data-t="'+t[0]+'"'+(t[0]===DSH.tab?' class="on"':'')+'>'+t[1]+'</button>'}).join('');
+  $('dtabs').onclick=function(e){var t=e.target.getAttribute('data-t');if(t){DSH.tab=t;[].forEach.call($('dtabs').children,function(b){b.className=b.getAttribute('data-t')===t?'on':''});dashShow()}};
+  $('dmain').innerHTML=dashPanels(M);
+  $('dmain').onclick=function(e){var h3=e.target.closest&&e.target.closest('.dcard>h3');if(h3&&dashMob()){h3.parentNode.classList.toggle('cl');dashDraw();return}var g=e.target.closest&&e.target.closest('[data-go]');if(g){DSH.tab=g.getAttribute('data-go');[].forEach.call($('dtabs').children,function(b){b.className=b.getAttribute('data-t')===DSH.tab?'on':''});dashShow()}
+    };
+  dashShow();
+}
+function dashShow(){[].forEach.call(document.querySelectorAll('#dmain .panel'),function(p){p.className='panel'+(p.id==='p-'+DSH.tab?' on':'')});dashDraw()}
+
+function dashPanels(M){
+  var ps='';
+  ps+='<section class="panel" id="p-overview"><div class="kpis" id="kp"></div><div class="mid">'+dcard('Belastning','Minuter per <span id="bk1">dag</span>, fördelat på passtyp',dchart('load')+'<div id="lgd"></div>')+dcard('Mina senaste pass','','<div class="nl" id="rec"></div>')+'</div><div class="bot">'+
+    dcard('Sömn','timmar',dchart('sleep'))+dcard('Energi','skala 1–5',dchart('energy'))+dcard('Vikt','kg',dchart('wt'))+dcard('Ömhet och stress','1–5, lägre är bättre',dchart('ss')+'<div class="legend"><span><i style="background:#f97316"></i>Ömhet</span><span><i style="background:#a78bfa"></i>Stress</span></div>')+'</div></section>';
+  ps+='<section class="panel" id="p-training"><div class="t1">'+dcard('Fördelning','minuter per passtyp i perioden','<div class="chart" data-c="share"></div><p class="fn">Pass med flera typer delar minuterna lika mellan typerna.</p>')+'</div>'+
+    '<div class="t2">'+dcard('Per vecka','minuter, fördelat på passtyp',dchart('wk'))+'</div>'+
+    '<div class="rt">'+dcard('Hur hårt det kändes (RPE per pass)','skala 1–10',dchart('rpe'))+dcard('Pass i perioden','','<div class="nl" id="rec2"></div>')+'</div></section>';
+  ps+='<section class="panel" id="p-body">'+dcard('Sömn','timmar per natt',dchart('b_sleep'))+dcard('Energi','1 = slut, 5 = full av energi',dchart('b_energy'))+dcard('Ömhet','1 = inte öm, 5 = mycket öm',dchart('b_sore'))+dcard('Stress','1–5',dchart('b_stress'))+'<div class="tbl">'+dcard('Morgonkoll','antal incheckningar i perioden','<div class="nl" id="cnt"></div>')+'</div></section>';
+  ps+='<section class="panel" id="p-weight"><div class="wk">'+dcard('Vikt','kg per incheckning, med matcher markerade',dchart('wtbig'))+'</div><div>'+dcard('Sammanfattning','','<div class="sgrid" id="wstats"></div>')+'</div><div>'+dcard('Matcher','','<div class="nl" id="mlist"></div>')+'</div></section>';
+  return ps;
+}
+function dashDraw(){try{dashDraw2()}catch(e){var m=document.getElementById('dinfo');if(m)m.innerHTML='<span style="color:#fbbf24">Fel i diagram: '+esc(e.message)+'</span>'}}
+function dashDraw2(){
+  var M=DSH.m;if(!M)return;var D=DSH.data,R=dashRange(M),Pv=dashPrev(R);
+  var t=DSH.tab,P=M.P,A=R.from,Bz=R.to;
+  var q=function(c){return document.querySelector('#dmain .panel.on [data-c="'+c+'"]')};
+  var inr=function(x){return inR(x.n,A,Bz)};
+  if(t==='overview'){
+    var s=dstats(M,A,Bz),p=Pv?dstats(M,Pv.from,Pv.to):null;
+    var dl=function(c,pv,inv){return p?ddelta(c,pv,'',inv):['','']};
+    var w=M.W.filter(function(x){return inr(x)&&x.weight!=null});
+    var d1l=dl(s.sessions,p&&p.sessions),d2=dl(s.minutes,p&&p.minutes),d3=dl(s.load,p&&p.load,true),d4=dl(s.rpe,p&&p.rpe,true);
+    document.getElementById('kp').innerHTML=dkpi('Pass',s.sessions,'',d1l[0],d1l[1])+dkpi('Minuter',Math.round(s.minutes),'',d2[0],d2[1])+dkpi('Belastning',Math.round(s.load),'',d3[0],d3[1])+dkpi('Snitt-RPE',d1(s.rpe),'/ 10',d4[0],d4[1])+dkpi('Aktiva dagar',s.days,'av '+R.len,'')+dkpi('Senaste vikt',w.length?d1(w[w.length-1].weight):'–',w.length?'kg':'',w.length>1?(w[w.length-1].weight-w[0].weight>0?'+':'')+d1(w[w.length-1].weight-w[0].weight)+' kg sedan '+dsh(w[0].n):'');
+    var bz=dbuckets(A,Bz);document.getElementById('bk1').textContent=bz.weekly?'vecka':'dag';
+    var ks=[];P.filter(inr).forEach(function(x){x.types.forEach(function(k){if(ks.indexOf(k)<0)ks.push(k)})});
+    var ser=ks.map(function(k){return{n:dtl(k),c:dtc(k),v:bz.B.map(function(b){return dsum(P.filter(function(x){return inR(x.n,b.a,b.b)}).map(function(x){return dsplit(x).filter(function(y){return y[0]===k}).reduce(function(a,y){return a+y[1]},0)}))})}});
+    dbar(q('load'),bz.B,ser,' min');document.getElementById('lgd').innerHTML=dleg(ks);
+    var rc=P.filter(inr).sort(function(a,b){return b.n-a.n}).slice(0,12);
+    document.getElementById('rec').innerHTML=rc.length?rc.map(function(x){return '<div class="nt"><b>'+dsh(x.n)+'</b> '+x.types.map(function(k){return '<span class="chip" style="background:rgba(255,255,255,.07);color:'+dtc(k)+'">'+esc(dtl(k))+'</span>'}).join(' ')+'<div>'+(x.min!=null?x.min+' min':'')+(x.rpe!=null?' · RPE '+x.rpe:'')+'</div></div>'}).join(''):'<p class="mut">Inga pass i perioden.</p>';
+    var dpts=function(k,minv,maxv,c,cont){return M.W.filter(inr).filter(function(x){return x[k]!=null}).map(function(x){return{x:x.n,y:Number(x[k])}})};
+    var lo={x0:A,x1:Bz,L:34};
+    dline(q('sleep'),dpts('sleep_h'),Object.assign({c:'#60a5fa',unit:' h'},lo));
+    dline(q('energy'),dpts('energy'),Object.assign({c:'#34d399',min:1,max:5},lo));
+    dline(q('wt'),dpts('weight'),Object.assign({c:'#fbbf24',unit:' kg'},lo));
+    dline2(q('ss'),dpts('soreness'),dpts('stress'),Object.assign({c:'#f97316',c2:'#a78bfa',min:1,max:5},lo));
+  }
+  if(t==='training'){
+    var types={};P.filter(inr).forEach(function(x){dsplit(x).forEach(function(y){types[y[0]]=(types[y[0]]||0)+y[1]})});
+    var tot=dsum(Object.keys(types).map(function(k){return types[k]}));
+    dhbars(q('share'),Object.keys(types).sort(function(a,b){return types[b]-types[a]}).map(function(k){return{l:dtl(k),v:types[k],c:dtc(k),t:Math.round(types[k])+' min · '+Math.round(100*types[k]/tot)+' %'}}));
+    var wb=dbuckets(A-(((A+3)%7)),Bz);wb.weekly=true;var B2=[];for(var s2=A-(((A+3)%7));s2<=Bz;s2+=7)B2.push({a:s2,b:s2+6,l:dsh(s2)});
+    var ks2=[];P.filter(inr).forEach(function(x){x.types.forEach(function(k){if(ks2.indexOf(k)<0)ks2.push(k)})});
+    dbar(q('wk'),B2,ks2.map(function(k){return{n:dtl(k),c:dtc(k),v:B2.map(function(b){return dsum(P.filter(function(x){return inR(x.n,b.a,b.b)}).map(function(x){return dsplit(x).filter(function(y){return y[0]===k}).reduce(function(a,y){return a+y[1]},0)}))})}}),' min');
+    var rp=P.filter(inr).filter(function(x){return x.rpe!=null}),rpts;
+    if(rp.length>60){rpts=B2.map(function(b){var v=rp.filter(function(x){return inR(x.n,b.a,b.b)});return v.length?{x:b.a+3,y:dsum(v.map(function(x){return x.rpe}))/v.length}:{x:b.a,y:null}});document.querySelector('#dmain .panel.on [data-c="rpe"]').parentNode.querySelector('.sub').textContent='skala 1–10, snitt per vecka'}
+    else rpts=rp.map(function(x,i){return{x:x.n+(i%5)*.15,y:x.rpe}});
+    dline(q('rpe'),rpts,{x0:A,x1:Bz,min:0,max:10,c:'#fbbf24',L:34});
+    var rc2=P.filter(inr).sort(function(a,b){return b.n-a.n}).slice(0,30);
+    document.getElementById('rec2').innerHTML=rc2.length?rc2.map(function(x){return '<div class="nt"><b>'+dsh(x.n)+'</b> '+x.types.map(dtl).join(', ')+'<div>'+(x.min!=null?x.min+' min':'')+(x.rpe!=null?' · RPE '+x.rpe:'')+'</div></div>'}).join(''):'<p class="mut">Inga pass i perioden.</p>';
+  }
+  if(t==='body'){
+    var wl={x0:A,x1:Bz,L:34},pp=function(k){return M.W.filter(inr).filter(function(x){return x[k]!=null}).map(function(x){return{x:x.n,y:Number(x[k])}})};
+    dline(q('b_sleep'),pp('sleep_h'),Object.assign({c:'#60a5fa',unit:' h'},wl));
+    dline(q('b_energy'),pp('energy'),Object.assign({c:'#34d399',min:1,max:5},wl));
+    dline(q('b_sore'),pp('soreness'),Object.assign({c:'#f97316',min:1,max:5},wl));
+    dline(q('b_stress'),pp('stress'),Object.assign({c:'#a78bfa',min:1,max:5},wl));
+    var ch=M.W.filter(inr);document.getElementById('cnt').innerHTML='<div class="nt"><b>'+ch.length+'</b> incheckningar av '+R.len+' dagar</div>';
+  }
+  if(t==='weight'){
+    var ws=M.W.filter(function(x){return x.weight!=null}).sort(function(a,b){return a.n-b.n}),wr=ws.filter(inr);
+    var ms=DSH.data.matches.map(function(m){return{n:dn(m.match_date),ev:m.event,lim:m.weight_limit_kg==null?null:Number(m.weight_limit_kg)}});
+    var nextm=ms.filter(function(m){return m.n>=M.today}).sort(function(a,b){return a.n-b.n})[0];
+    var hl=nextm&&nextm.lim!=null?[{y:nextm.lim,t:'viktgräns '+d1(nextm.lim)+' kg'}]:[];
+    var vl=ms.filter(function(m){return m.n>=A&&m.n<=Bz+60}).map(function(m){return{x:m.n,t:m.ev||'match'}});
+    var x1=Bz;vl.forEach(function(v){if(v.x>x1)x1=v.x});
+    dline(q('wtbig'),wr.map(function(x){return{x:x.n,y:x.weight}}),{x0:A,x1:x1,c:'#fbbf24',unit:' kg',hl:hl,vl:vl,L:44,empty:'Ingen vikt inlagd för perioden'});
+    var st=document.getElementById('wstats'),h='';
+    if(wr.length){var lo2=Math.min.apply(null,wr.map(function(x){return x.weight})),hi=Math.max.apply(null,wr.map(function(x){return x.weight})),lastw=wr[wr.length-1];
+      h+='<div class="stat"><span>Senaste</span><b>'+d1(lastw.weight)+' kg</b></div><div class="stat"><span>Första i perioden</span><b>'+d1(wr[0].weight)+' kg</b></div><div class="stat"><span>Lägst</span><b>'+d1(lo2)+' kg</b></div><div class="stat"><span>Högst</span><b>'+d1(hi)+' kg</b></div>';
+      }
+    else h='<p class="mut">Ingen vikt inlagd för perioden.</p>';
+    st.innerHTML=h;
+    document.getElementById('mlist').innerHTML=ms.length?ms.sort(function(a,b){return b.n-a.n}).map(function(m){var dd=m.n-M.today;return '<div class="nt"><b>'+dsh(m.n)+' '+dstr(m.n).slice(0,4)+'</b> <span class="chip">'+(dd>0?dd+' dagar kvar':dd===0?'idag':'för '+(-dd)+' dagar sedan')+'</span><div>'+esc([m.ev,m.lim!=null?'gräns '+d1(m.lim)+' kg':''].filter(Boolean).join(' · '))+'</div>'+'</div>'}).join(''):'<p class="mut">Ingen match inlagd.</p>';
+  }
+}
+
 
   /* ---------- IDAG ---------- */
   function todayDaily() { for (var i = 0; i < ctx.daily.length; i++) if (ctx.daily[i].day === ctx.today) return ctx.daily[i]; return null; }
