@@ -220,6 +220,11 @@ textarea{min-height:76px;resize:vertical}
 #dash.mob #p-overview .mid,#dash.mob #p-overview .bot,#dash.mob #p-training .rt{grid-template-columns:1fr}
 #dash.mob #p-training .rt,#dash.mob #p-body .tbl,#dash.mob #p-training .t1{grid-column:auto;grid-row:auto}
 #dash.mob .chart{flex:none;height:210px}
+#dash.mob .dcard>h3{cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:2px 0}
+#dash.mob .dcard>h3:after{content:'▾';font-size:15px;color:#a9c4b4}
+#dash.mob .dcard.cl>h3:after{content:'▸'}
+#dash.mob .dcard.cl>*:not(h3){display:none}
+#dash.mob .dcard.cl{padding-bottom:10px}
 #dash.mob .nl,#dash.mob .list,#dash.mob .det{max-height:360px}
 #dash.mob #p-profile>div:first-child>.dcard{overflow:visible}
 #dash.mob .pgrid,#dash.mob .lg{grid-template-columns:1fr}
@@ -308,7 +313,7 @@ function teamCard(){
      '<label for="tp">Period</label><select id="tp"><option value="7">Senaste 7 dagarna</option><option value="30" selected>Senaste 30 dagarna</option><option value="90">Senaste 3 månaderna</option><option value="365">Senaste året</option><option value="all">Allt som finns</option><option value="custom">Eget intervall…</option></select>'+
      '<div id="tc" class="g2" hidden><div><label for="tf">Från</label><input id="tf" type="date"></div><div><label for="tt">Till</label><input id="tt" type="date" value="'+today()+'"></div></div>'+
      '<p id="tmsg" class="small"></p><button class="btn" id="tb">Analysera laget</button><div style="margin-top:12px">'+
-     (a.map(function(x,i){return VZ.hist((x.label||'')+' · '+x.period_from+' → '+x.period_to+' · körd '+String(x.created_at).slice(0,10),x.summary,i===0)}).join('')||'<p class="muted small">Inga lagsanalyser än.</p>')+'</div>';
+     (a.map(function(x,i){return VZ.hist((x.label||'')+' · '+x.period_from+' → '+x.period_to+' · körd '+String(x.created_at).slice(0,10),x.summary,false)}).join('')||'<p class="muted small">Inga lagsanalyser än.</p>')+'</div>';
     $('tp').onchange=function(){$('tc').hidden=this.value!=='custom'};
     $('tb').onclick=function(){var v=$('tp').value,to=today(),from,lab=$('tp').options[$('tp').selectedIndex].text;
       if(v==='custom'){from=$('tf').value;to=$('tt').value;lab='Eget intervall';if(!from||!to){fail($('tmsg'),new Error('Välj från- och tilldatum'));return}}
@@ -687,7 +692,7 @@ function mdLite(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/
 function weeklyCard(id){
   var box=$('wk');if(!box)return;
   rpc('fp3_list_summaries',{p_fighter_id:id}).then(function(a){a=a||[];
-    box.innerHTML='<div class="row" style="justify-content:space-between"><h3 style="margin:0">Veckosammanfattning</h3><div class="row"><button class="btn sec sm" id="wp">Förhandsvisa fighterns analys</button><button class="btn sm" id="wb">Sammanfatta veckan</button></div></div><div id="wpv"></div><p class="small muted">Kör när du vill. Gäller senaste 7 dagarna. Skriven av AI utifrån incheckningar och dina anteckningar. Fightern har en egen veckoanalys i sin länk (en per vecka, från söndag kl 20).</p><p id="wm" class="small"></p><div id="wl">'+(a.map(function(x,i){return '<div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn sec sm" data-pw="'+i+'">Skriv ut</button></div>'+VZ.hist(String(x.created_at||x.week_start).slice(0,10)+' (från '+x.week_start+')',x.summary,i===0)}).join('')||'<p class="muted small">Inga än.</p>')+'</div>';
+    box.innerHTML='<div class="row" style="justify-content:space-between"><h3 style="margin:0">Veckosammanfattning</h3><div class="row"><button class="btn sec sm" id="wp">Förhandsvisa fighterns analys</button><button class="btn sm" id="wb">Sammanfatta veckan</button></div></div><div id="wpv"></div><p class="small muted">Kör när du vill. Gäller senaste 7 dagarna. Skriven av AI utifrån incheckningar och dina anteckningar. Fightern har en egen veckoanalys i sin länk (en per vecka, från söndag kl 20).</p><p id="wm" class="small"></p><div id="wl">'+(a.map(function(x,i){return '<div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn sec sm" data-pw="'+i+'">Skriv ut</button></div>'+VZ.hist(String(x.created_at||x.week_start).slice(0,10)+' (från '+x.week_start+')',x.summary,false)}).join('')||'<p class="muted small">Inga än.</p>')+'</div>';
     Array.prototype.forEach.call(box.querySelectorAll('[data-pw]'),function(bt){bt.onclick=function(){var x=a[Number(bt.getAttribute('data-pw'))];printCoach(x.summary,{title:'Veckoanalys',period:'från '+x.week_start,created:String(x.created_at||x.week_start).slice(0,10)})}});
     $('wp').onclick=function(){var b=$('wp');b.disabled=true;b.textContent='Skriver…';$('wm').textContent='';
       api('/functions/v1/coach_weekly',{fighter_id:id,preview_fighter:true}).then(function(x){b.disabled=false;b.textContent='Förhandsvisa fighterns analys';$('wpv').innerHTML='<div class="note"><q>Så ser fighterns analys ut (förhandsvisning, sparas inte) · '+esc(x.week_start)+' till '+esc(x.week_end)+'</q>'+VZ.render(x.summary)+'</div>'}).catch(function(er){b.disabled=false;b.textContent='Förhandsvisa fighterns analys';fail($('wm'),new Error(er.message==='ingen_data'?'Inget inlagt de senaste 7 dagarna.':er.message))})};
@@ -703,7 +708,7 @@ function analysisCard(id){
      '<label for="ap">Period</label><select id="ap"><option value="30">Senaste 30 dagarna</option><option value="90">Senaste 3 månaderna</option><option value="180">Senaste 6 månaderna</option><option value="365">Senaste året</option><option value="all">Allt som finns</option><option value="custom">Eget intervall…</option></select>'+
      '<div id="ac" class="g2" hidden><div><label for="af">Från</label><input id="af" type="date"></div><div><label for="at">Till</label><input id="at" type="date" value="'+today()+'"></div></div>'+
      '<p id="am" class="small"></p><button class="btn" id="ab2">Analysera</button><div id="al" style="margin-top:12px">'+
-     (a.map(function(x,i){return '<div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn sec sm" data-pr="'+i+'">Skriv ut</button></div>'+VZ.hist((x.label||'')+' · '+x.period_from+' → '+x.period_to+' · körd '+String(x.created_at).slice(0,10),x.summary,i===0)}).join('')||'<p class="muted small">Inga analyser än.</p>')+'</div>';
+     (a.map(function(x,i){return '<div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn sec sm" data-pr="'+i+'">Skriv ut</button></div>'+VZ.hist((x.label||'')+' · '+x.period_from+' → '+x.period_to+' · körd '+String(x.created_at).slice(0,10),x.summary,false)}).join('')||'<p class="muted small">Inga analyser än.</p>')+'</div>';
     $('ap').onchange=function(){$('ac').hidden=this.value!=='custom'};
     Array.prototype.forEach.call(box.querySelectorAll('[data-pr]'),function(bt){bt.onclick=function(){var x=a[Number(bt.getAttribute('data-pr'))];printCoach(x.summary,{title:'Fördjupad analys'+(x.label?' · '+x.label:''),period:x.period_from+' till '+x.period_to,created:String(x.created_at).slice(0,10)})}});
     $('ab2').onclick=function(){var v=$('ap').value,to=today(),from,lab=$('ap').options[$('ap').selectedIndex].text;
@@ -757,7 +762,7 @@ function passCard(id,fname){
       (d.passes||[]).forEach(function(p){body+='<div class="small" style="margin-bottom:6px"><b>Fighterns svar:</b> '+(p.types||[]).map(function(t){return '<span class="pill">'+esc(TN[t]||t)+'</span>'}).join('')+chip('RPE',p.rpe)+(p.minutes?'<span class="pill">'+esc(p.minutes)+' min</span>':'')+(p.pain?'<span class="pill" style="color:var(--danger)">Värk'+(p.pain_location?': '+esc(p.pain_location):'')+'</span>':'')+(p.did?'<div><b>Gjorde:</b> '+esc(p.did)+'</div>':'')+(p.felt?'<div><b>Kändes:</b> '+esc(p.felt)+'</div>':'')+'</div>'});
       if(d.daily)body+='<div class="small muted" style="margin-bottom:6px">Morgonkoll: sömn '+esc(d.daily.sleep)+'/5 · energi '+esc(d.daily.energy)+'/5 · ömhet '+esc(d.daily.soreness)+'/5 · stress '+esc(d.daily.stress)+'/5'+(d.daily.weight!=null?' · '+esc(d.daily.weight)+' kg':'')+(d.daily.pain?' · värk'+(d.daily.pain_location?': '+esc(d.daily.pain_location):''):'')+'</div>';
       body+=(d.notes||[]).map(function(n){return '<div class="note"><q>'+esc((TN[n.type]||n.type)+' · '+(CN[n.category]||n.category)+(n.question?' – '+n.question:''))+'</q>'+esc(n.note)+' <button class="btn sec sm" data-prm="'+esc(n.id)+'">Ta bort</button></div>'}).join('');
-      return '<details class="card" style="margin:0 0 8px"'+(i===0?' open':'')+'>'+head+'<div style="margin-top:8px">'+(body||'<span class="muted small">Inget inlagt.</span>')+'</div></details>';
+      return '<details class="card" style="margin:0 0 8px"'+''+'>'+head+'<div style="margin-top:8px">'+(body||'<span class="muted small">Inget inlagt.</span>')+'</div></details>';
     }).join('')||'<p class="muted small">Inga pass inlagda för den här fightern de senaste 90 dagarna.</p>';
     box.innerHTML='<h3 style="margin:0 0 6px">Pass</h3><p class="small muted">Fighterns egna svar och dina anteckningar, dag för dag. Senaste 90 dagarna.</p>'+form+list;
     voiceCard({box:'vcf',fixed:[{id:id,name:fname||'Fightern'}],date:function(){return $('pnd').value},type:function(){return $('pnt').value},after:function(){passCard(id,fname)}});
@@ -1061,10 +1066,16 @@ function dashOpen(id,f){
   $('dclose').onclick=dashClose;
   window.addEventListener('resize',dashFit);document.addEventListener('keydown',dashKey);
   dashFit();
-  Promise.all([rpc('fp8_fighter_passes',{p_fighter_id:id,p_days:400}),rpc('fp10_dash_daily',{p_fighter_id:id,p_days:400}),rpc('fp10_dash_matches',{p_fighter_id:id}),rpc('fp3_get_profile',{p_id:id}),rpc('fp3_list_analyses',{p_fighter_id:id}),rpc('fp3_fighter_layers',{p_fighter_id:id}).catch(function(){return null})]).then(function(r){
-    DSH.data={f:f,days:r[0]||[],daily:r[1]||[],matches:r[2]||[],profile:r[3]||{},analyses:r[4]||[],layers:r[5]};
-    DSH.tab='overview';DSH.range='all';dashBuild();
-  }).catch(function(er){var m=$('dmain');if(m)m.innerHTML='<p class="dload">Kunde inte hämta data: '+esc(er.message)+'</p>'});
+  var errs=[],soft=function(pr,dflt,nm){return pr.catch(function(er){errs.push(nm+': '+(er&&er.message||er));return dflt})};
+  DSH.data={f:f,days:[],daily:[],matches:[],profile:{},analyses:null,layers:null,errs:errs};
+  Promise.all([soft(rpc('fp8_fighter_passes',{p_fighter_id:id,p_days:400}),[],'pass'),soft(rpc('fp10_dash_daily',{p_fighter_id:id,p_days:400}),[],'dagliga'),soft(rpc('fp10_dash_matches',{p_fighter_id:id}),[],'matcher'),soft(rpc('fp3_get_profile',{p_id:id}),{},'profil')]).then(function(r){
+    var D=DSH.data;D.days=r[0]||[];D.daily=r[1]||[];D.matches=r[2]||[];D.profile=r[3]||{};
+    DSH.tab='overview';DSH.range='all';DSH.an=0;
+    try{dashBuild()}catch(e){var m=$('dmain');if(m)m.innerHTML='<p class="dload">Dashboarden kunde inte byggas: '+esc(e.message)+'</p>';return}
+    if(errs.length){var inf=$('dinfo');if(inf)inf.innerHTML+='<br><span style="color:#fbbf24">Kunde inte hämta: '+esc(errs.join('; '))+'</span>'}
+    soft(rpc('fp3_list_analyses',{p_fighter_id:id}),[],'analyser').then(function(a){D.analyses=a||[];if(document.getElementById('dash'))dashDraw()});
+    soft(rpc('fp3_fighter_layers',{p_fighter_id:id}),null,'lager').then(function(l){D.layers=l;var lg=document.getElementById('lgrid');if(lg)lg.removeAttribute('data-done');if(document.getElementById('dash'))dashDraw()});
+  });
 }
 function dashClose(){var e=document.getElementById('dash');if(e)e.remove();document.body.style.overflow='';window.removeEventListener('resize',dashFit);document.removeEventListener('keydown',dashKey)}
 function dashKey(e){if(e.key==='Escape')dashClose()}
@@ -1163,7 +1174,7 @@ function dhbars(el,rows){ // [{l,v,c,t}]
 /* ---- byggare ---- */
 function dkpi(l,v,u,d,cls){return '<div class="kpi"><div class="l">'+l+'</div><div class="v">'+v+(u?' <small>'+u+'</small>':'')+'</div><div class="d '+(cls||'')+'">'+(d||'&nbsp;')+'</div></div>'}
 function ddelta(cur,prev,unit,inv){if(prev==null||cur==null||!prev)return['',''];var p=Math.round((cur/prev-1)*100);return[(p>0?'+':'')+p+' % mot föregående period',p===0?'flat':(p>0)!==!!inv?'up':'dn']}
-function dcard(t,sub,body,cls){return '<div class="dcard '+(cls||'')+'"><h3>'+t+'</h3>'+(sub?'<div class="sub">'+sub+'</div>':'')+body+'</div>'}
+function dcard(t,sub,body,cls){return '<div class="dcard cl '+(cls||'')+'"><h3>'+t+'</h3>'+(sub?'<div class="sub">'+sub+'</div>':'')+body+'</div>'}
 function dchart(id){return '<div class="chart" data-c="'+id+'"></div>'}
 function dleg(keys){return '<div class="legend">'+keys.map(function(k){return '<span><i style="background:'+dtc(k)+'"></i>'+esc(dtl(k))+'</span>'}).join('')+'</div>'}
 function dlatest(){var a=DSH.data.analyses||[];return a[0]||null}
@@ -1183,7 +1194,7 @@ function dashBuild(){
   $('dtabs').innerHTML=DTABS.map(function(t){return '<button data-t="'+t[0]+'"'+(t[0]===DSH.tab?' class="on"':'')+'>'+t[1]+'</button>'}).join('');
   $('dtabs').onclick=function(e){var t=e.target.getAttribute('data-t');if(t){DSH.tab=t;[].forEach.call($('dtabs').children,function(b){b.className=b.getAttribute('data-t')===t?'on':''});dashShow()}};
   $('dmain').innerHTML=dashPanels(M);
-  $('dmain').onclick=function(e){var g=e.target.closest&&e.target.closest('[data-go]');if(g){DSH.tab=g.getAttribute('data-go');[].forEach.call($('dtabs').children,function(b){b.className=b.getAttribute('data-t')===DSH.tab?'on':''});dashShow()}
+  $('dmain').onclick=function(e){var h3=e.target.closest&&e.target.closest('.dcard>h3');if(h3&&dashMob()){h3.parentNode.classList.toggle('cl');dashDraw();return}var g=e.target.closest&&e.target.closest('[data-go]');if(g){DSH.tab=g.getAttribute('data-go');[].forEach.call($('dtabs').children,function(b){b.className=b.getAttribute('data-t')===DSH.tab?'on':''});dashShow()}
     var a=e.target.closest&&e.target.closest('[data-an]');if(a){DSH.an=Number(a.getAttribute('data-an'));dashAnalysis()}};
   dashShow();
 }
@@ -1221,7 +1232,7 @@ function dashDraw(){
     var ser=ks.map(function(k){return{n:dtl(k),c:dtc(k),v:bz.B.map(function(b){return dsum(P.filter(function(x){return inR(x.n,b.a,b.b)}).map(function(x){return dsplit(x).filter(function(y){return y[0]===k}).reduce(function(a,y){return a+y[1]},0)}))})}});
     dbar(q('load'),bz.B,ser,' min');document.getElementById('lgd').innerHTML=dleg(ks);
     var lat=dlatest(),sm=lat&&dparse(lat),ai=sm&&sm.ai?sm.ai:null,ab=document.getElementById('aibox');
-    if(!lat)ab.innerHTML='<p class="mut">Ingen analys körd än. Kör en under Analys i fighterns sida.</p>';
+    if(DSH.data.analyses==null)ab.innerHTML='<p class="mut">Hämtar analys…</p>';else if(!lat)ab.innerHTML='<p class="mut">Ingen analys körd än. Kör en under Analys i fighterns sida.</p>';
     else{var main=ai&&(ai.sammanfattning||ai.summary);ab.innerHTML='<p>'+esc(dtext(main)||'Analysen saknar sammanfattning.')+'</p><div class="mut">'+esc((lat.label||'')+' · '+lat.period_from+' → '+lat.period_to)+'</div><button class="link" data-go="analysis">Öppna hela analysen →</button>'}
     var dpts=function(k,minv,maxv,c,cont){return M.W.filter(inr).filter(function(x){return x[k]!=null}).map(function(x){return{x:x.n,y:Number(x[k])}})};
     var lo={x0:A,x1:Bz,L:34};
@@ -1271,7 +1282,7 @@ function dashDraw(){
   }
   if(t==='profile')dashProfile();
   if(t==='analysis')dashAnalysis();
-  if(t==='layers'){var lg=document.getElementById('lgrid');if(!lg.getAttribute('data-done')){lg.setAttribute('data-done','1');lg.innerHTML=layersHtml(D.layers)||'<p class="mut">Inga lager att visa än.</p>'}}
+  if(t==='layers'){var lg=document.getElementById('lgrid');if(!lg.getAttribute('data-done')){if(D.layers!=null)lg.setAttribute('data-done','1');lg.innerHTML=D.layers==null?'<p class="mut">Hämtar lager…</p>':(layersHtml(D.layers)||'<p class="mut">Inga lager att visa än.</p>')}}
 }
 
 function dashProfile(){
@@ -1286,6 +1297,7 @@ function dashProfile(){
 }
 function dashAnalysis(){
   var a=DSH.data.analyses||[],i=DSH.an==null?0:DSH.an,L=document.getElementById('alist'),det=document.getElementById('adet');
+  if(DSH.data.analyses==null){L.innerHTML='<p class="mut">Hämtar…</p>';det.innerHTML='';return}
   if(!a.length){L.innerHTML='<p class="mut">Inga analyser än.</p>';det.innerHTML='<p class="mut">Kör en analys under Fördjupad analys på fighterns sida.</p>';return}
   L.innerHTML=a.map(function(x,k){return '<button class="it'+(k===i?' on':'')+'" data-an="'+k+'"><span class="n">'+(k+1)+'</span><span class="t">'+esc((x.label||'Analys')+' · '+x.period_from+' → '+x.period_to)+'<br><small>körd '+esc(String(x.created_at).slice(0,10))+'</small></span></button>'}).join('');
   det.innerHTML=VZ.render(a[i].summary);
