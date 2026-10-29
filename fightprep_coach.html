@@ -231,17 +231,74 @@ textarea{min-height:76px;resize:vertical}
 #dash.mob .dhr{grid-template-columns:90px 1fr 100px}
 #dash.mob #p-layers{overflow:visible}
 .fold>:first-child h3,.fold>h3:first-child{cursor:pointer}.fold>:first-child h3:after,.fold>h3:first-child:after{content:' ▾';color:var(--muted)}.fold.cl>:first-child h3:after,.fold.cl>h3:first-child:after{content:' ▸'}.fold.cl>*:not(:first-child){display:none}
+
+/* ===== Artefaktens stil (hela appen) ===== */
+body{font-size:15px}
+header{background:#08110c;border-bottom:1px solid var(--border)}
+.bar{max-width:none;margin:0;padding:10px 20px;gap:18px;flex-wrap:nowrap}
+.bar h1{display:flex;align-items:center;gap:9px;font-size:19px;font-weight:800;letter-spacing:-.02em;margin:0 auto 0 0}
+.lm{width:24px;height:24px;border-radius:7px;background:var(--accent);display:grid;place-items:center;font-style:normal;font-size:15px;color:#fff}
+.tabsbar{display:flex;gap:2px;padding:0 14px;background:#08110c;border-top:1px solid var(--border);overflow-x:auto}
+.tab{border:0;border-bottom:3px solid transparent;background:none;border-radius:0;color:#a9c4b4;padding:11px 16px;min-height:0;font-size:15px;font-weight:600;white-space:nowrap}
+.tab:hover{color:#fff}
+.tab[aria-selected=true]{background:none;color:#fff;border-bottom-color:var(--accent)}
+.tab.lo{border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);padding:7px 14px}
+main{max-width:1280px;padding:18px 20px 70px}
+#app{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(460px,100%),1fr));gap:0 14px;align-items:start}
+#app>*:not(.card){grid-column:1/-1}
+#app>.card:only-child{max-width:760px}
+.card{border-radius:14px;padding:14px 16px}
+.card>h3{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:#77957f;font-weight:700}
+h2{font-size:1.25rem;letter-spacing:-.01em}
+input,select,textarea{background:#10201a;border-radius:10px}
+.btn{border-radius:10px}
+.btn.sec{background:var(--surface)}
+.item{border-radius:14px}.item:hover{border-color:#2f6b49}
+#app #l{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:10px}
+#app #l>.row{margin:0!important}
+#app #l>.item{margin:0}
+.pill{background:rgba(34,164,93,.18);color:#7fe0a8;border-color:transparent}
+.ftr{padding:7px 20px;background:#08110c;border-top:1px solid var(--border);font-size:13px;color:#77957f;position:fixed;left:0;right:0;bottom:0;z-index:4}
+
+/* ===== Dashboard: Slagdata + Så fungerar det ===== */
+#dash #p-strike{grid-template-rows:auto 1fr auto;gap:14px}
+#dash #p-strike .src{display:flex;align-items:baseline;gap:14px;font-size:15px;color:#a9c4b4}
+#dash #p-strike .src b{font-size:18px;color:#e9f4ec}
+#dash #p-strike .cgrid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:14px;min-height:0}
+#dash #p-strike .cc{padding:20px 24px;justify-content:center;position:relative}
+#dash #p-strike .cc .n{position:absolute;top:18px;right:22px;width:30px;height:30px;border-radius:50%;background:#10201a;border:1px solid #1b3326;display:grid;place-items:center;font-weight:700;color:#a9c4b4}
+#dash #p-strike .cc>h3{margin:0 0 10px;font-size:24px;line-height:1.25;padding-right:40px;text-transform:none;letter-spacing:0;color:#e9f4ec;font-weight:700}
+#dash #p-strike ul{margin:0;padding-left:22px;color:#a9c4b4}
+#dash #p-strike .cc li{font-size:19px;line-height:1.5;margin:4px 0}
+#dash #p-strike .foot{font-size:15px;color:#a9c4b4;background:#0b1710;border:1px solid #1b3326;border-radius:12px;padding:12px 18px}
+#dash #p-strike .foot li{font-size:15px;line-height:1.4;margin:1px 0}
+#dash #p-how{grid-template-rows:auto 1fr auto;gap:12px}
+#dash .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+#dash .step{background:#0b1710;border:1px solid #1b3326;border-radius:14px;padding:13px 15px;position:relative}
+#dash .step .ic{width:30px;height:30px;border-radius:9px;background:rgba(34,164,93,.18);color:#7fe0a8;display:grid;place-items:center;font-size:16px;margin-bottom:6px}
+#dash .step b{display:block;font-size:15.5px}#dash .step p{margin:3px 0 0;font-size:13px;color:#a9c4b4;line-height:1.4}
+#dash .step:not(:last-child):after{content:"\203A";position:absolute;right:-11px;top:50%;transform:translateY(-50%);font-size:22px;color:#3f6650;z-index:2}
+#dash .rules{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;min-height:0;align-content:center}
+#dash .rule{background:#0b1710;border:1px solid #1b3326;border-radius:14px;padding:12px 14px}
+#dash .rule i{display:grid;place-items:center;width:22px;height:22px;border-radius:7px;background:rgba(52,211,153,.14);color:#34d399;font-style:normal;font-weight:800;font-size:13px;margin-bottom:5px}
+#dash .rule b{display:block;font-size:15.5px}#dash .rule span{font-size:14px;color:#a9c4b4;line-height:1.4;display:block;margin-top:2px}
+#dash .src4{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+#dash .src4 .kpi .v{font-size:22px}
+#dash.mob #p-strike .cgrid,#dash.mob .flow,#dash.mob .rules{grid-template-columns:1fr}
+#dash.mob .src4{grid-template-columns:1fr 1fr}
+#dash.mob .step:after{display:none}
+#dash.mob #p-strike .cc>h3{font-size:20px}#dash.mob #p-strike .cc li{font-size:16px}
 </style>
 </head>
 <body>
-<header><div class="bar"><h1>FightPrep</h1>
-<nav id="tabs" class="row" hidden>
+<header><div class="bar"><h1><i class="lm">F</i>FightPrep</h1><button class="tab lo" id="logout" hidden>Logga ut</button></div>
+<nav id="tabs" class="tabsbar" hidden>
 <button class="tab" data-tab="fighters">Fighters</button>
 <button class="tab" data-tab="sum">Sammanställning</button>
 <button class="tab" data-tab="opps">Motståndare</button>
-<button class="tab" data-tab="matches">Matcher</button>
-<button class="tab" id="logout">Logga ut</button></nav></div></header>
+<button class="tab" data-tab="matches">Matcher</button></nav></header>
 <main id="app"></main>
+<footer class="ftr">Endast coachen har tillgång till den här vyn.</footer>
 <script>
 (function(){
 'use strict';
@@ -273,7 +330,7 @@ function logout(msg){S.token=null;S.refresh=null;ls('fp3_rt',null);login(msg)}
 $('logout').onclick=function(){logout()};
 
 function login(msg){
-  tabs.hidden=true;
+  tabs.hidden=true;$('logout').hidden=true;
   app.innerHTML='<div class="card" style="max-width:380px;margin:28px auto"><h2>Logga in</h2><form id="lf"><label for="em">E-post</label><input id="em" type="email" autocomplete="username" required><label for="pw">Lösenord</label><input id="pw" type="password" autocomplete="current-password" required><p class="err" id="le" role="alert">'+esc(msg||'')+'</p><button class="btn" style="width:100%">Logga in</button></form><p class="small" style="margin-top:14px"><a href="#" id="fg">Första gången / glömt lösenord</a></p></div>';
   $('fg').onclick=function(e){e.preventDefault();recoverForm()};
   $('lf').onsubmit=function(e){e.preventDefault();$('le').textContent='';authCall('token?grant_type=password',{email:$('em').value.trim(),password:$('pw').value}).then(function(j){setSession(j);return boot()}).catch(function(er){$('le').textContent=er.message})};
@@ -281,7 +338,7 @@ function login(msg){
 function boot(){
   return rpc('fp2_coach_whoami').then(function(w){
     if(!w||!w.coach){logout('Kontot saknar coach-behörighet.');return}
-    return Promise.all([rpc('fp3_list_archetypes'),rpc('fp2_coach_questions')]).then(function(r){S.archetypes=r[0]||[];S.questions=r[1]||[];tabs.hidden=false;S.view=null;render()});
+    return Promise.all([rpc('fp3_list_archetypes'),rpc('fp2_coach_questions')]).then(function(r){S.archetypes=r[0]||[];S.questions=r[1]||[];tabs.hidden=false;$('logout').hidden=false;S.view=null;render()});
   });
 }
 tabs.onclick=function(e){var t=e.target.getAttribute('data-tab');if(t){S.tab=t;S.view=null;render()}};
@@ -1056,7 +1113,7 @@ function d1(v){return v==null||isNaN(v)?'–':(Math.round(v*10)/10).toString().r
 function dniceMax(v){if(v<=0)return 1;var e=Math.pow(10,Math.floor(Math.log(v)/Math.LN10)),m=v/e;return (m<=1?1:m<=2?2:m<=5?5:10)*e}
 
 var DSH={m:null,range:'all',tab:'overview',data:null};
-var DTABS=[['overview','Översikt'],['profile','Profil'],['training','Träning'],['body','Kropp'],['weight','Vikt & match'],['analysis','Analys'],['layers','Lager']];
+var DTABS=[['overview','Översikt'],['profile','Profil'],['training','Träning'],['body','Kropp'],['weight','Vikt & match'],['analysis','Analys'],['layers','Lager'],['strike','Slagdata'],['how','Så fungerar det']];
 var DRNG=[['7','1V',7],['28','4V',28],['84','12V',84],['182','6M',182],['all','Allt',0]];
 
 function dashOpen(id,f){
@@ -1214,6 +1271,17 @@ function dashPanels(M){
   ps+='<section class="panel" id="p-weight"><div class="wk">'+dcard('Vikt','kg per incheckning, med matcher markerade',dchart('wtbig'))+'</div><div>'+dcard('Sammanfattning','','<div class="sgrid" id="wstats"></div>')+'</div><div>'+dcard('Matcher','','<div class="nl" id="mlist"></div>')+'</div></section>';
   ps+='<section class="panel" id="p-analysis"><div>'+dcard('Analyser','tryck för att öppna','<div class="list" id="alist"></div>')+'</div><div>'+dcard('Vald analys','','<div class="det" id="adet"></div>')+'</div></section>';
   ps+='<section class="panel" id="p-layers"><div class="lg" id="lgrid"></div></section>';
+  ps+='<section class="panel" id="p-strike"><div class="src"><b>Slagdata</b><span>Inte kopplad än. De viktigaste lagren den skulle läsas mot.</span></div><div class="cgrid">'+
+    [['Profil × slagtyper',['Coachens styrkor och svagheter','Antalet visar om de stämmer, t.ex. få sparkar','Visar förändring över veckor']],
+     ['Viktklass × output',['Klassens tempo och hur matcher avgörs som ram','Hans output läst mot den','Bara jämförelse, aldrig ett faktum om honom']],
+     ['Stil × slagmix',['Hans stil och stance','Mot klassens vanligaste stil','Mot en kommande motståndare, t.ex. en southpaw']],
+     ['Hur domare dömer × volym och typ',['Vad domare väger i klassen','Hur många slag han kastar','Vilka sorter, och i vilka ronder']]
+    ].map(function(c,k){return dcard(esc(c[0]),'','<div class="n">'+(k+1)+'</div><ul>'+c[1].map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul>','cc')}).join('')+
+    '</div><div class="foot"><ul><li>Går också att läsa mot: skador, belastning, vikt och matchfas, morgoncheck, coachens anteckningar</li><li>Kommer in som ett nytt nivå 1-lager, "Passmått"</li><li>Används aldrig ensamt. Fighterns egen RPE avgör fortfarande hur hårt ett pass var</li></ul></div></section>';
+  var RUL=[['Allt går att spåra','Fynd visar källa, datum och värde, och vad som talar emot dem.'],['Säkerheten följer datan','Få pass ger låg säkerhet och mer vikt på hypoteser och vad som behöver samlas in.'],['Inga antaganden','Ingen match antas. Utan registrerad match bedöms vikten aldrig som för hög.'],['Jämför bara med det som finns','Saknas tidigare data säger analysen det i stället för att hitta på en trend.'],['RPE avgör hur hårt','Hårdheten kommer från fighterns eget betyg, inte från passets namn.'],['Referens är bara referens','Studier och uttalanden används för jämförelse, aldrig som belägg om fightern.'],['Bara du ser analysen','Fightern ser sin egen korta veckonotis och inget av dina underliggande anteckningar.'],['Du bestämmer','Förslagen är underlag för ditt omdöme, inte svaret.']];
+  var STP=[['✎','Profil','Du skriver styrkor, svagheter, stil och skador en gång.'],['⏱','Efter passet','Fightern svarar på några korta frågor: typ, minuter, RPE, hur det kändes.'],['☀','Morgoncheck','Sömn, energi, ömhet, stress och vikt. Under en minut.'],['✍','Dina anteckningar','Det du ser på mattan. Du är inte med på alla pass, så luckor är normala.'],['✦','Analys','Allt vägs mot lagren. Varje fynd visar sitt underlag och vad som talar emot.']];
+  ps+='<section class="panel" id="p-how"><div class="flow">'+STP.map(function(x){return '<div class="step"><div class="ic">'+x[0]+'</div><b>'+x[1]+'</b><p>'+x[2]+'</p></div>'}).join('')+'</div><div class="rules">'+RUL.map(function(r){return '<div class="rule"><i>✓</i><b>'+r[0]+'</b><span>'+r[1]+'</span></div>'}).join('')+'</div><div class="src4">'+
+    [[M.P.length,'pass loggade'],[M.W.length,'morgonchecks'],[M.N.length,'coachanteckningar']].map(function(x){return '<div class="kpi"><div class="l">'+x[1]+'</div><div class="v">'+x[0]+'</div></div>'}).join('')+'</div></section>';
   return ps;
 }
 
