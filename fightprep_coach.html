@@ -789,20 +789,29 @@ function archHtml(sc){
 var WDN=['sön','mån','tis','ons','tors','fre','lör'];
 function matchCard(id){
   var box=$('mc');if(!box)return;
-  rpc('fp9_matches',{p_fighter_id:id}).then(function(ms){ms=ms||[];
-    var list=ms.map(function(m){var dl=m.days_left;var when=dl>0?dl+' dagar kvar':dl===0?'idag':'för '+(-dl)+' dagar sedan';
-      return '<div class="note"><b>'+esc(m.match_date)+'</b> <span class="pill">'+esc(when)+'</span>'+(m.event?'<div>'+esc(m.event)+'</div>':'')+(m.opponent?'<div class="small">Mot: '+esc(m.opponent)+'</div>':'')+(m.weight_limit_kg!=null?'<div class="small">Viktgräns: '+esc(m.weight_limit_kg)+' kg</div>':'')+(m.note?'<div class="small muted">'+esc(m.note)+'</div>':'')+
-        ' <button class="btn sec sm" data-mre="'+esc(m.id)+'">Ändra</button> <button class="btn sec sm" data-mrm="'+esc(m.id)+'">Ta bort</button></div>'}).join('');
-    box.innerHTML='<h3 style="margin:0 0 6px">Match</h3><p class="small muted">Lägg in om fightern har en match och när. Analyserna anpassar då förberedelse, nedtrappning och vikt. Utan match antar de ingen.</p>'+(list||'<p class="muted small">Ingen match inlagd.</p>')+
+  Promise.all([rpc('fp12_matches',{p_fighter_id:id}),rpc('fp3_list_opponents',{}).catch(function(){return []})]).then(function(rs){var ms=rs[0]||[],ops=rs[1]||[];
+    var RES=['vinst','förlust','oavgjort','no contest','inställd'],MTH=['KO/TKO','submission','domslut','diskning','annat'];
+    function sel(i,arr,v,ph){return '<select id="'+i+'"><option value="">'+ph+'</option>'+arr.map(function(x){return '<option'+(x===v?' selected':'')+'>'+esc(x)+'</option>'}).join('')+'</select>'}
+    function item(m){var dl=m.days_left;var when=dl>0?dl+' dagar kvar':dl===0?'idag':'för '+(-dl)+' dagar sedan';
+      var res=m.result?'<span class="pill">'+esc(m.result)+(m.method?' · '+esc(m.method):'')+(m.round?' · rond '+esc(m.round):'')+'</span> ':'';
+      return '<div class="note"><b>'+esc(m.match_date)+'</b> <span class="pill">'+esc(when)+'</span> '+res+(m.event?'<div>'+esc(m.event)+'</div>':'')+(m.opponent?'<div class="small">Mot: '+esc(m.opponent)+'</div>':'')+(m.weight_limit_kg!=null?'<div class="small">Viktgräns: '+esc(m.weight_limit_kg)+' kg</div>':'')+(m.note?'<div class="small muted">'+esc(m.note)+'</div>':'')+
+        ' <button class="btn sec sm" data-mre="'+esc(m.id)+'">Ändra</button> <button class="btn sec sm" data-mrm="'+esc(m.id)+'">Ta bort</button></div>'}
+    var up=ms.filter(function(m){return m.days_left>=0}).reverse(),past=ms.filter(function(m){return m.days_left<0});
+    var list=(up.length?'<p class="small muted" style="margin:6px 0 2px">Kommande</p>'+up.map(item).join(''):'')+(past.length?'<p class="small muted" style="margin:8px 0 2px">Tidigare</p>'+past.map(item).join(''):'');
+    var oo='<option value="">Välj motståndare…</option>'+ops.map(function(o){return '<option value="'+esc(o.id)+'">'+esc(o.full_name)+(o.promotion?' ('+esc(o.promotion)+')':'')+'</option>'}).join('');
+    box.innerHTML='<h3 style="margin:0 0 6px">Match</h3><p class="small muted">Lägg in match, motståndare och hur den slutade. Analyserna anpassar förberedelse, nedtrappning och vikt efter kommande match.</p>'+(list||'<p class="muted small">Ingen match inlagd.</p>')+
       '<details class="card" style="margin:8px 0 0"><summary><b id="mfh">+ Lägg in match</b></summary><div class="g2"><div><label for="mfd">Datum</label><input type="date" id="mfd"></div><div><label for="mfw">Viktgräns (kg)</label><input type="number" step="0.1" inputmode="decimal" id="mfw" placeholder="t.ex. 70.3"></div></div>'+
-      '<label for="mfe">Event</label><input id="mfe" placeholder="Gala / arrangör"><label for="mfo">Motståndare</label><input id="mfo" placeholder="Valfritt"><label for="mfn">Anteckning</label><input id="mfn" placeholder="Valfritt"><p id="mfm" class="small"></p><button class="btn sm" id="mfs">Spara match</button></details>';
+      '<label for="mfe">Event</label><input id="mfe" placeholder="Gala / arrangör"><label for="mfop">Motståndare (från listan)</label><select id="mfop">'+oo+'</select><label for="mfo">…eller skriv namn</label><input id="mfo" placeholder="Valfritt">'+
+      '<div class="g2"><div><label for="mfr">Resultat</label>'+sel('mfr',RES,'','Inte spelad / okänt')+'</div><div><label for="mfm2">Hur slutade den</label>'+sel('mfm2',MTH,'','—')+'</div></div>'+
+      '<label for="mfrd">Rond</label><input type="number" min="1" max="10" inputmode="numeric" id="mfrd" placeholder="Valfritt"><label for="mfn">Anteckning</label><input id="mfn" placeholder="Valfritt"><p id="mfm" class="small"></p><button class="btn sm" id="mfs">Spara match</button></details>';
     var eid=null,det=box.querySelector('details');
+    $('mfop').onchange=function(){var o=ops.filter(function(x){return String(x.id)===$('mfop').value})[0];if(o)$('mfo').value=o.full_name};
     box.onclick=function(e){var r=e.target.getAttribute('data-mrm'),c=e.target.getAttribute('data-mre');
-      if(r){e.target.disabled=true;rpc('fp9_match_remove',{p_id:r}).then(function(){matchCard(id)}).catch(function(er){alert(er.message)})}
-      if(c){var m=ms.filter(function(x){return x.id===c})[0];if(m){eid=c;$('mfd').value=m.match_date;$('mfe').value=m.event||'';$('mfo').value=m.opponent||'';$('mfw').value=m.weight_limit_kg==null?'':m.weight_limit_kg;$('mfn').value=m.note||'';$('mfh').textContent='Ändra match';det.open=true}}};
+      if(r){if(!confirm('Ta bort matchen?'))return;e.target.disabled=true;rpc('fp9_match_remove',{p_id:r}).then(function(){matchCard(id)}).catch(function(er){alert(er.message)})}
+      if(c){var m=ms.filter(function(x){return x.id===c})[0];if(m){eid=c;$('mfd').value=m.match_date;$('mfe').value=m.event||'';$('mfo').value=m.opponent||'';$('mfop').value=m.opponent_id||'';$('mfw').value=m.weight_limit_kg==null?'':m.weight_limit_kg;$('mfn').value=m.note||'';$('mfr').value=m.result||'';$('mfm2').value=m.method||'';$('mfrd').value=m.round||'';$('mfh').textContent='Ändra match';det.open=true;det.scrollIntoView({block:'nearest'})}}};
     $('mfs').onclick=function(){var d=$('mfd').value;if(!d){fail($('mfm'),new Error('Välj datum.'));return}
-      var w=$('mfw').value;this.disabled=true;var b=this;
-      rpc('fp9_match_save',{p_fighter_id:id,p_date:d,p_event:$('mfe').value,p_opponent:$('mfo').value,p_weight_kg:w===''?null:Number(w),p_note:$('mfn').value,p_id:eid}).then(function(){matchCard(id)}).catch(function(er){b.disabled=false;fail($('mfm'),er)})};
+      var w=$('mfw').value,rd=$('mfrd').value,b=this;b.disabled=true;
+      rpc('fp12_match_save',{p_fighter_id:id,p_date:d,p_event:$('mfe').value,p_opponent:$('mfo').value,p_opponent_id:$('mfop').value||null,p_weight_kg:w===''?null:Number(w),p_note:$('mfn').value,p_result:$('mfr').value||null,p_method:$('mfm2').value||null,p_round:rd===''?null:Number(rd),p_id:eid}).then(function(){matchCard(id)}).catch(function(er){b.disabled=false;fail($('mfm'),er)})};
   }).catch(function(er){fail(box,er)});
 }
 function passCard(id,fname){
