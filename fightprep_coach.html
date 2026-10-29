@@ -288,6 +288,7 @@ input,select,textarea{background:#10201a;border-radius:10px}
 #dash.mob .src4{grid-template-columns:1fr 1fr}
 #dash.mob .step:after{display:none}
 #dash.mob #p-strike .cc>h3{font-size:20px}#dash.mob #p-strike .cc li{font-size:16px}
+.rc input[type=radio]{width:20px;height:20px;min-height:0;padding:0;margin:0;flex:none}.rc textarea{width:100%}
 </style>
 </head>
 <body>
@@ -944,18 +945,52 @@ function gpVal(k,v){
   if(k==='prep_priorities'&&Array.isArray(v))return '<ol>'+v.map(function(x){return '<li><b>'+esc(x.focus||'')+'</b>'+(x.why?'<div class="small">'+esc(x.why)+'</div>':'')+(x.how?'<div class="small"><b>Hur:</b> '+esc(x.how)+'</div>':'')+(x.timing?'<div class="small muted">'+esc(x.timing)+'</div>':'')+'</li>'}).join('')+'</ol>';
   return renderVal(v);
 }
+var PLANF=[['summary','Sammanfattning'],['data_basis','Vad planen bygger på'],['changes_vs_analysis','Ändringar mot AI-analysen'],['open_questions','Att kontrollera'],['prep_priorities','Förberedelse – prioriteringar'],['plan_a','Plan A'],['plan_b','Plan B'],['round_strategy','Rundstrategi'],['corner_calls','Hörnrop'],['recommended_tactics','Taktik'],['risks','Risker'],['uncertainty_notes','Osäkerheter']];
+var SECR=[['recommended_tactics','Taktik'],['risks','Risker'],['plan_a','Plan A'],['plan_b','Plan B'],['strengths_vs_weaknesses','Styrkor vs svagheter'],['physical_matchup_analysis','Fysisk matchup'],['their_technical_profile','Motståndare – teknik'],['my_technical_profile','Min fighter – teknik']];
+function planVal(k,v){
+  if(k==='changes_vs_analysis'&&Array.isArray(v))return v.map(function(x){return '<div class="note"><b>'+esc(x.what||'')+'</b>'+(x.from_analysis?'<div class="small"><b>AI-analysen:</b> '+esc(x.from_analysis)+'</div>':'')+(x.coach_correction?'<div class="small"><b>Din rättelse:</b> '+esc(x.coach_correction)+'</div>':'')+(x.effect_on_plan?'<div class="small"><b>Planen:</b> '+esc(x.effect_on_plan)+'</div>':'')+'</div>'}).join('');
+  return gpVal(k,v);
+}
 function matchView(id){
   app.innerHTML='<p class="muted">Laddar…</p>';
-  Promise.all([rpc('fp3_get_matchup_context',{p_matchup_id:id}),rpc('fp3_get_latest_gameplan',{p_matchup_id:id})]).then(function(r){
-    var c=r[0]||{},g=r[1],m=c.matchup||{},f=(c.fighter||{}).fighter||{},o=(c.opponent||{}).opponent||{};
-    app.innerHTML='<div class="row" style="justify-content:space-between"><button class="btn sec sm" id="bk">← Lista</button><button class="btn sec sm" id="dl" hidden>Radera</button></div>'+
-     '<div class="card"><h2>'+esc(f.name)+' vs '+esc(o.full_name)+'</h2><div class="small muted">'+esc([m.event_name,m.event_date,m.status].filter(Boolean).join(' · '))+'</div>'+
-     '<p class="small">Analysen väger motståndarens observationer, med hur många gånger du sett dem, mot fighterns egen träning, profil, skador, vikt och dagar kvar till match. Ju mer som är loggat och observerat, desto säkrare blir den, och den säger när underlaget är tunt.</p><p id="m" class="small"></p><button class="btn" id="gen">'+(g?'Generera ny gameplan':'Generera gameplan')+'</button></div><div id="gp"></div>';
+  Promise.all([rpc('fp3_get_matchup_context',{p_matchup_id:id}),rpc('fp12_gameplans',{p_matchup_id:id})]).then(function(r){
+    var c=r[0]||{},G=r[1]||{},an=G.analys,pl=G.plan,m=c.matchup||{},f=(c.fighter||{}).fighter||{},o=(c.opponent||{}).opponent||{};
+    var cor=(an&&an.corrections)||{items:{},sections:{},general:''};cor.items=cor.items||{};cor.sections=cor.sections||{};
+    function box(n,t,body){return '<div class="card"><div class="small muted" style="letter-spacing:.06em;text-transform:uppercase">Steg '+n+' av 3</div><h3 style="margin:2px 0 6px">'+t+'</h3>'+body+'</div>'}
+    function itemCtl(sec,i){var v=cor.items[sec+'.'+i]||{};var vd=v.verdict||'stämmer';
+      return '<div class="small rc" style="margin:4px 0 8px"><span class="muted">Din bedömning:</span> '+[['stämmer','Stämmer'],['ändra','Ändra'],['ta bort','Ta bort']].map(function(x){return '<label style="display:inline-flex;align-items:center;gap:6px;margin:0 14px 0 0;font-size:inherit"><input type="radio" name="v_'+sec+'_'+i+'" data-v="'+sec+'.'+i+'" value="'+x[0]+'"'+(vd===x[0]?' checked':'')+'> '+x[1]+'</label>'}).join('')+
+        '<textarea data-t="'+sec+'.'+i+'" placeholder="Din rättelse: vad stämmer inte, och vad är rätt?" style="min-height:60px;margin-top:4px'+(vd==='stämmer'?';display:none':'')+'">'+esc(v.text||'')+'</textarea></div>'}
+    function itemsHtml(sec,arr,fn){return (arr||[]).map(function(x,i){return fn(x)+itemCtl(sec,i)}).join('')}
+    var s1,s2='',s3='';
+    s1=box(1,'AI-analys av matchupen','<p class="small">Väger motståndarens observationer, med hur många gånger du sett dem, mot fighterns träning, profil, skador, vikt och dagar kvar till match. Den säger när underlaget är tunt.</p><p id="m" class="small"></p><button class="btn" id="gen">'+(an?'Skapa ny AI-analys':'Skapa AI-analys')+'</button>'+(an?'<p class="small muted">Genererad '+esc(String(an.created_at||'').slice(0,16).replace('T',' '))+'. En ny analys ersätter den här och dina rättelser, och planen i steg 3 måste skapas på nytt.</p>':''));
+    if(an){
+      var ana=['summary','data_basis'].map(function(k){return an[k]==null?'':'<h3>'+(k==='summary'?'Sammanfattning':'Vad analysen bygger på')+'</h3>'+renderVal(an[k])}).join('');
+      ana+= (an.fighter_data_vs_opponent&&an.fighter_data_vs_opponent.length?'<h3>Motståndaren mot fighterns data</h3>'+itemsHtml('fighter_data_vs_opponent',an.fighter_data_vs_opponent,function(x){return gpVal('fighter_data_vs_opponent',[x])}):'')+
+        (an.prep_priorities&&an.prep_priorities.length?'<h3>Förberedelse – prioriteringar</h3>'+itemsHtml('prep_priorities',an.prep_priorities,function(x){return '<div class="note"><b>'+esc(x.focus||'')+'</b>'+(x.why?'<div class="small">'+esc(x.why)+'</div>':'')+(x.how?'<div class="small"><b>Hur:</b> '+esc(x.how)+'</div>':'')+(x.timing?'<div class="small muted">'+esc(x.timing)+'</div>':'')+'</div>'}):'');
+      var rest=SECR.map(function(k){return an[k[0]]==null?'':'<details style="margin:8px 0"><summary><b>'+k[1]+'</b>'+(cor.sections[k[0]]?' <span class="pill">rättad</span>':'')+'</summary>'+renderVal(an[k[0]])+'<label for="sc_'+k[0]+'">Din rättelse av '+k[1].toLowerCase()+' (valfritt)</label><textarea id="sc_'+k[0]+'" data-sec="'+k[0]+'" style="min-height:60px">'+esc(cor.sections[k[0]]||'')+'</textarea></details>'}).join('');
+      s2=box(2,'Rätta analysen','<p class="small">Gå igenom varje post. Markera <b>Stämmer</b>, <b>Ändra</b> eller <b>Ta bort</b>, och skriv vad som är rätt. Dina rättelser går före AI-analysen i steg 3, även mot loggad data. Du kan lämna det du inte har synpunkter på.</p><div class="gpbody">'+ana+rest+'</div>'+
+        '<label for="cg">Det AI:n missat eller inte vet (allmänt)</label><textarea id="cg" placeholder="t.ex. skadat knä, bytt tränare, vet att han tränat om sin takedown-försvar sedan förra matchen">'+esc(cor.general||'')+'</textarea><p id="cm" class="small"></p><button class="btn" id="csave">Spara rättelser</button>');
+      s3=box(3,'Kalibrerad plan','<p class="small">AI-analysen och dina rättelser blir en färdig plan. Den redovisar vad som ändrats mot analysen och vad som inte går ihop med fighterns data.</p>'+
+        (pl&&G.plan_stale?'<p class="small" style="color:#fbbf24">Planen nedan är byggd på en äldre analys. Skapa den på nytt.</p>':'')+'<p id="pm" class="small"></p><button class="btn" id="pgen">'+(pl?'Skapa ny kalibrerad plan':'Skapa kalibrerad plan')+'</button>'+
+        (pl?'<div class="card gp" style="margin-top:12px"><div class="small muted">Skapad '+esc(String(pl.created_at||'').slice(0,16).replace('T',' '))+(pl.generated_by?' · '+esc(pl.generated_by):'')+'</div>'+PLANF.map(function(k){return pl[k[0]]==null?'':'<h3>'+k[1]+'</h3>'+planVal(k[0],pl[k[0]])}).join('')+'</div>':''));
+    }else{
+      s2=box(2,'Rätta analysen','<p class="small muted">Blir tillgängligt när AI-analysen är skapad.</p>');
+      s3=box(3,'Kalibrerad plan','<p class="small muted">Blir tillgängligt efter att du granskat analysen.</p>');
+    }
+    app.innerHTML='<div class="row" style="justify-content:space-between"><button class="btn sec sm" id="bk">← Lista</button></div><div class="card"><h2 style="margin:0">'+esc(f.name)+' vs '+esc(o.full_name)+'</h2><div class="small muted">'+esc([m.event_name,m.event_date,m.status].filter(Boolean).join(' · '))+'</div></div>'+s1+s2+s3;
     $('bk').onclick=function(){S.view=null;render()};
-    function show(g){$('gp').innerHTML=g?'<div class="card gp"><div class="small muted">Genererad '+esc(String(g.created_at||'').slice(0,16).replace('T',' '))+(g.generated_by?' · '+esc(g.generated_by):'')+'</div>'+GP.map(function(k){return g[k[0]]==null?'':'<h3>'+k[1]+'</h3>'+gpVal(k[0],g[k[0]])}).join('')+'</div>':''}
-    show(g);
-    $('gen').onclick=function(){var b=this;b.disabled=true;b.textContent='Genererar… (kan ta en minut)';$('m').className='small muted';$('m').textContent='';
-      api('/functions/v1/coach_gameplan',{matchup_id:id}).then(function(x){show(x.gameplan);b.disabled=false;b.textContent='Generera ny gameplan'}).catch(function(er){b.disabled=false;b.textContent='Generera gameplan';fail($('m'),er)})};
+    function err(el,er){el.className='small err';el.textContent=er.message||String(er)}
+    $('gen').onclick=function(){if(an&&!confirm('Skapa en ny AI-analys? Den ersätter den nuvarande, och dina rättelser följer inte med.'))return;var b=this;b.disabled=true;b.textContent='Analyserar… (kan ta ett par minuter)';$('m').className='small muted';$('m').textContent='';
+      api('/functions/v1/coach_gameplan',{matchup_id:id}).then(function(){matchView(id)}).catch(function(er){b.disabled=false;b.textContent=an?'Skapa ny AI-analys':'Skapa AI-analys';err($('m'),er)})};
+    if(an){
+      app.addEventListener('change',function ch(e){if(!document.body.contains($('csave'))){app.removeEventListener('change',ch);return}var k=e.target.getAttribute&&e.target.getAttribute('data-v');if(k){var t=app.querySelector('[data-t="'+k+'"]');if(t)t.style.display=e.target.value==='stämmer'?'none':''}});
+      function collect(){var out={items:{},sections:{},general:$('cg').value};
+        Array.prototype.forEach.call(app.querySelectorAll('[data-v]:checked'),function(r){var k=r.getAttribute('data-v'),t=app.querySelector('[data-t="'+k+'"]');var txt=t?t.value.trim():'';if(r.value!=='stämmer'||txt)out.items[k]={verdict:r.value,text:txt}});
+        Array.prototype.forEach.call(app.querySelectorAll('[data-sec]'),function(t){if(t.value.trim())out.sections[t.getAttribute('data-sec')]=t.value.trim()});return out}
+      $('csave').onclick=function(){var b=this;b.disabled=true;$('cm').className='small muted';$('cm').textContent='Sparar…';rpc('fp12_gp_correct',{p_id:an.id,p_corrections:collect()}).then(function(){b.disabled=false;$('cm').className='small ok';$('cm').textContent='Sparat. Skapa nu den kalibrerade planen i steg 3.'}).catch(function(er){b.disabled=false;err($('cm'),er)})};
+      $('pgen').onclick=function(){var b=this;b.disabled=true;b.textContent='Skapar planen… (kan ta ett par minuter)';$('pm').className='small muted';$('pm').textContent='Sparar dina rättelser först…';
+        rpc('fp12_gp_correct',{p_id:an.id,p_corrections:collect()}).then(function(){$('pm').textContent='';return api('/functions/v1/coach_gameplan',{matchup_id:id,mode:'calibrate',analys_id:an.id})}).then(function(){matchView(id)}).catch(function(er){b.disabled=false;b.textContent=pl?'Skapa ny kalibrerad plan':'Skapa kalibrerad plan';err($('pm'),er)})};
+    }
   }).catch(function(er){app.innerHTML='<p class="err">'+esc(er.message)+'</p>'});
 }
 
