@@ -299,7 +299,7 @@ input,select,textarea{background:#10201a;border-radius:10px}
 <button class="tab" data-tab="opps">Motståndare</button>
 <button class="tab" data-tab="matches">Matcher</button></nav></header>
 <main id="app"></main>
-<footer class="ftr">Endast coachen har tillgång till den här vyn. · Version 29 okt, matchanalys i tre steg</footer>
+<footer class="ftr">Endast coachen har tillgång till den här vyn. · Version 29 okt (2), motståndarprofil med observationer</footer>
 <script>
 (function(){
 'use strict';
@@ -885,12 +885,20 @@ function oppList(){
     $('l').onclick=function(e){var d=e.target.closest('[data-del]');if(d){if(confirm('Radera '+d.getAttribute('data-nm')+'? Observationer och matcher försvinner. Går inte att ångra.'))rpc('fp3_delete_opponent',{p_id:d.getAttribute('data-del')}).then(oppList).catch(function(er){alert(er.message)});return}var b=e.target.closest('[data-id]');if(b){S.view=b.getAttribute('data-id');render()}}}).catch(function(er){fail($('l'),er)});
 }
 var OF=[['full_name','Namn'],['nickname','Smeknamn'],['promotion','Organisation'],['weight_class','Viktklass'],['stance','Stance'],['height_cm','Längd (cm)','n'],['reach_cm','Räckvidd (cm)','n'],['country','Land'],['gym_name','Gym'],['fight_record','Rekord'],['general_strengths','Generella styrkor','t'],['general_weaknesses','Generella svagheter','t']];
+function scoutBlock(){
+  function cnt(i){return '<select id="'+i+'" aria-label="Hur många gånger sett"><option value="1">Sett en gång</option><option value="2">Sett 2 gånger</option><option value="3">Sett 3 gånger</option><option value="4">Sett 4 gånger</option><option value="5">Sett 5 eller fler</option></select>'}
+  return '<h3 style="margin:18px 0 4px">Styrkor och svagheter per område</h3><p class="small muted">Skriv det du sett, till exempel på matchvideo. Ange hur många gånger du sett det: en gång är svagt underlag, 2 visst stöd, 3 eller fler återkommande mönster. Analyserna väger efter det. Tomma fält sparas inte. Fler observationer med datum och tidpunkt lägger du in på motståndarens sida efteråt.</p>'+
+   '<label for="o_src">Sett i</label><select id="o_src">'+opts(SRC,'match')+'</select>'+
+   CATS.map(function(c){var k=c[0];return '<details class="card" style="margin:8px 0 0"><summary><b>'+esc(c[1])+'</b></summary><label for="sq_'+k+'">Styrka</label><textarea id="sq_'+k+'" style="min-height:70px" placeholder="Vad är han bra på här?"></textarea>'+cnt('sqn_'+k)+'<label for="sv_'+k+'">Svaghet</label><textarea id="sv_'+k+'" style="min-height:70px" placeholder="Var är han svag eller sårbar?"></textarea>'+cnt('svn_'+k)+'</details>'}).join('');
+}
 function oppEdit(o){
   o=o||{};
-  app.innerHTML='<div class="card"><h2>'+(o.id?'Redigera':'Ny')+' motståndare</h2><form id="of">'+OF.map(function(x){var v=o[x[0]]==null?'':o[x[0]];return '<label for="o_'+x[0]+'">'+x[1]+'</label>'+(x[2]==='t'?'<textarea id="o_'+x[0]+'">'+esc(v)+'</textarea>':'<input id="o_'+x[0]+'" '+(x[2]==='n'?'type="number" step="any" inputmode="decimal"':'')+' value="'+esc(v)+'">')}).join('')+'<p id="m" class="small"></p><div class="row" style="margin-top:10px"><button class="btn">Spara</button><button type="button" class="btn sec" id="c">Avbryt</button></div></form></div>';
+  app.innerHTML='<div class="card"><h2>'+(o.id?'Redigera':'Ny')+' motståndare</h2><form id="of">'+OF.map(function(x){var v=o[x[0]]==null?'':o[x[0]];return '<label for="o_'+x[0]+'">'+x[1]+'</label>'+(x[2]==='t'?'<textarea id="o_'+x[0]+'">'+esc(v)+'</textarea>':'<input id="o_'+x[0]+'" '+(x[2]==='n'?'type="number" step="any" inputmode="decimal"':'')+' value="'+esc(v)+'">')}).join('')+scoutBlock()+'<p id="m" class="small"></p><div class="row" style="margin-top:10px"><button class="btn">Spara</button><button type="button" class="btn sec" id="c">Avbryt</button></div></form></div>';
   $('c').onclick=function(){render()};
   $('of').onsubmit=function(e){e.preventDefault();var g=function(k){return $('o_'+k).value};if(!nz(g('full_name'))){fail($('m'),new Error('Namn saknas'));return}
-    rpc('fp3_upsert_opponent',{p_id:o.id||null,p_full_name:g('full_name').trim(),p_nickname:nz(g('nickname')),p_promotion:nz(g('promotion')),p_weight_class:nz(g('weight_class')),p_stance:nz(g('stance')),p_height_cm:num(g('height_cm')),p_reach_cm:num(g('reach_cm')),p_country:nz(g('country')),p_gym_name:nz(g('gym_name')),p_fight_record:nz(g('fight_record')),p_general_strengths:nz(g('general_strengths')),p_general_weaknesses:nz(g('general_weaknesses'))}).then(function(r){S.view=r.id;render()}).catch(function(er){fail($('m'),er)})};
+    rpc('fp3_upsert_opponent',{p_id:o.id||null,p_full_name:g('full_name').trim(),p_nickname:nz(g('nickname')),p_promotion:nz(g('promotion')),p_weight_class:nz(g('weight_class')),p_stance:nz(g('stance')),p_height_cm:num(g('height_cm')),p_reach_cm:num(g('reach_cm')),p_country:nz(g('country')),p_gym_name:nz(g('gym_name')),p_fight_record:nz(g('fight_record')),p_general_strengths:nz(g('general_strengths')),p_general_weaknesses:nz(g('general_weaknesses'))}).then(function(r){
+      var jobs=[];CATS.forEach(function(c){var k=c[0];[['sq_','sqn_','styrka'],['sv_','svn_','svaghet']].forEach(function(t){var el=$(t[0]+k),txt=el?nz(el.value):null;if(txt)jobs.push({p_opponent_id:r.id,p_source_type:$('o_src').value,p_source_date:today(),p_category:k,p_note:txt,p_reference:null,p_match_label:null,p_kind:t[2],p_seen_count:Number($(t[1]+k).value)})})});
+      return jobs.reduce(function(pr,j){return pr.then(function(){return rpc('fp12_add_observation',j)})},Promise.resolve()).then(function(){S.view=r.id;render()},function(er){o.id=r.id;fail($('m'),new Error('Motståndaren är sparad, men observationerna kunde inte sparas helt: '+(er.message||er)+' Öppna motståndaren och lägg in dem där.'))})}).catch(function(er){fail($('m'),er)})};
 }
 function seenLbl(n){n=n||1;return n>=3?['Sett '+(n>=5?'5+':n)+' gånger · återkommande','#34d399']:n===2?['Sett 2 gånger','#fbbf24']:['Sett en gång · svagt underlag','#f97316']}
 function obsBlock(obs){
