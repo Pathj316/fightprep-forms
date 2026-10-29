@@ -215,9 +215,19 @@ h2{font-size:1.1rem;margin:0 0 8px}
 #dash.mob .dhr{grid-template-columns:90px 1fr 100px}
 #dash.mob #p-layers{overflow:visible}
 .fold>:first-child h3,.fold>h3:first-child{cursor:pointer}.fold>:first-child h3:after,.fold>h3:first-child:after{content:' ▾';color:var(--muted)}.fold.cl>:first-child h3:after,.fold.cl>h3:first-child:after{content:' ▸'}.fold.cl>*:not(:first-child){display:none}
+
+/* ===== Samma stil som coach-appen och artefakten ===== */
+header.top{display:flex;align-items:center;gap:9px;padding:10px 20px;background:#08110c;border-bottom:1px solid var(--border);font-weight:800;font-size:19px;letter-spacing:-.02em}
+.lm{width:24px;height:24px;border-radius:7px;background:var(--accent);display:grid;place-items:center;font-style:normal;font-size:15px;color:#fff}
+main{max-width:640px}
+.nav{display:flex;gap:2px;border-bottom:1px solid var(--border);margin:0 0 18px;overflow-x:auto}
+.nav button{border:0;border-bottom:3px solid transparent;background:none;border-radius:0;color:#a9c4b4;padding:11px 14px;min-height:0;font-size:15px;font-weight:600;white-space:nowrap;flex:1}
+.nav button:hover{color:#fff}
+.nav button[aria-current=true]{background:none;color:#fff;border-bottom-color:var(--accent)}
 </style>
 </head>
 <body>
+<header class="top"><i class="lm">F</i>FightPrep</header>
 <main id="app">
   <p class="muted">Laddar…</p>
 </main>
