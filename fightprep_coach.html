@@ -1190,7 +1190,7 @@ function dbar(el,B,series,unit){
   if(!tot.some(function(v){return v>0}))return dnd(el);
   var mx=dniceMax(Math.max.apply(null,tot)),bw=iw/B.length,g=Math.min(bw*.22,6),o='<svg width="'+W+'" height="'+H+'">'+dyAxis(L,T,iw,ih,mx,0,function(v){return Math.round(v)});
   B.forEach(function(b,i){var y=T+ih,x=L+i*bw+g/2;series.forEach(function(se){var v=se.v[i]||0;if(v<=0)return;var h=ih*v/mx;y-=h;o+='<rect x="'+x+'" y="'+y+'" width="'+Math.max(bw-g,1)+'" height="'+h+'" fill="'+se.c+'"><title>'+esc(b.l+' · '+se.n+': '+Math.round(v)+(unit||''))+'</title></rect>'});});
-  var step=Math.max(1,Math.ceil(52/bw));B.forEach(function(b,i){if(i%step===0)o+='<text x="'+(L+i*bw+bw/2)+'" y="'+(H-6)+'" text-anchor="middle">'+esc(b.l)+'</text>'});
+  var step=Math.max(1,Math.ceil(52/bw));B.forEach(function(b,i){if(i%step===0)o+='<text x="'+(L+i*bw+bw/2)+'" y="'+(H-6)+'" text-anchor="middle">'+esc(b.t||b.l)+'</text>'});
   el.innerHTML=o+'</svg>';
 }
 function dline(el,pts,opt){
@@ -1265,7 +1265,7 @@ function dashPanels(M){
     dcard('Sömn','timmar',dchart('sleep'))+dcard('Energi','skala 1–5',dchart('energy'))+dcard('Vikt','kg',dchart('wt'))+dcard('Ömhet och stress','1–5, lägre är bättre',dchart('ss')+'<div class="legend"><span><i style="background:#f97316"></i>Ömhet</span><span><i style="background:#a78bfa"></i>Stress</span></div>')+'</div></section>';
   ps+='<section class="panel" id="p-profile"></section>';
   ps+='<section class="panel" id="p-training"><div class="t1">'+dcard('Fördelning','minuter per passtyp i perioden','<div class="chart" data-c="share"></div><p class="fn">Pass med flera typer delar minuterna lika mellan typerna.</p>')+'</div>'+
-    '<div class="t2">'+dcard('Per vecka','minuter, fördelat på passtyp',dchart('wk'))+'</div>'+
+    '<div class="t2">'+dcard('Per vecka','minuter per kalendervecka (mån–sön), fördelat på passtyp. * = pågående vecka, inte full',dchart('wk'))+'</div>'+
     '<div class="rt">'+dcard('Intensitet (RPE per pass)','skala 1–10',dchart('rpe'))+dcard('Coachens anteckningar','senaste i perioden','<div class="nl" id="nlist"></div>')+'</div></section>';
   ps+='<section class="panel" id="p-body">'+dcard('Sömn','timmar per natt',dchart('b_sleep'))+dcard('Energi','1 = slut, 5 = full av energi',dchart('b_energy'))+dcard('Ömhet','1 = inte öm, 5 = mycket öm',dchart('b_sore'))+dcard('Stress','1–5',dchart('b_stress'))+'<div class="tbl">'+dcard('Smärta','dagar då fightern angett smärta','<div class="nl" id="painlist"></div>')+'</div></section>';
   ps+='<section class="panel" id="p-weight"><div class="wk">'+dcard('Vikt','kg per incheckning, med matcher markerade',dchart('wtbig'))+'</div><div>'+dcard('Sammanfattning','','<div class="sgrid" id="wstats"></div>')+'</div><div>'+dcard('Matcher','','<div class="nl" id="mlist"></div>')+'</div></section>';
@@ -1315,7 +1315,7 @@ function dashDraw2(){
     var types={};P.filter(inr).forEach(function(x){dsplit(x).forEach(function(y){types[y[0]]=(types[y[0]]||0)+y[1]})});
     var tot=dsum(Object.keys(types).map(function(k){return types[k]}));
     dhbars(q('share'),Object.keys(types).sort(function(a,b){return types[b]-types[a]}).map(function(k){return{l:dtl(k),v:types[k],c:dtc(k),t:Math.round(types[k])+' min · '+Math.round(100*types[k]/tot)+' %'}}));
-    var wb=dbuckets(A-(((A+3)%7)),Bz);wb.weekly=true;var B2=[];for(var s2=A-(((A+3)%7));s2<=Bz;s2+=7)B2.push({a:s2,b:s2+6,l:dsh(s2)});
+    var wb=dbuckets(A-(((A+3)%7)),Bz);wb.weekly=true;var B2=[];for(var s2=A-(((A+3)%7));s2<=Bz;s2+=7)B2.push({a:s2,b:s2+6,l:dsh(s2)+(s2+6>M.today?' · pågår':''),t:dsh(s2)+(s2+6>M.today?'*':'')});
     var ks2=[];P.filter(inr).forEach(function(x){x.types.forEach(function(k){if(ks2.indexOf(k)<0)ks2.push(k)})});
     dbar(q('wk'),B2,ks2.map(function(k){return{n:dtl(k),c:dtc(k),v:B2.map(function(b){return dsum(P.filter(function(x){return inR(x.n,b.a,b.b)}).map(function(x){return dsplit(x).filter(function(y){return y[0]===k}).reduce(function(a,y){return a+y[1]},0)}))})}}),' min');
     var rp=P.filter(inr).filter(function(x){return x.rpe!=null}),rpts;
