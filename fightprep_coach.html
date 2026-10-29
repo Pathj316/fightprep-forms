@@ -439,8 +439,8 @@ function profileEdit(id,d){
 }
 /* ---- VZ: grafer och analyskort (ingen extern kod) ---- */
 var VZ = (function () {
-  var TN = { styrka: 'Styrka', kondition: 'Kondition', mma: 'MMA', striking: 'Striking', grappling: 'Grappling', wrestling: 'Brottning', sparring: 'Sparring', annat: 'Annat' };
-  var TC = { styrka: '#e2e8f0', kondition: '#14b8a6', mma: '#60a5fa', striking: '#f59e0b', grappling: '#a78bfa', wrestling: '#a3e635', sparring: '#f472b6', annat: '#64748b' };
+  var TN = { styrka: 'Styrka', kondition: 'Kondition', mma: 'MMA', striking: 'Striking', grappling: 'Grappling', wrestling: 'Brottning', wall_wrestling: 'Väggbrottning', sparring: 'Sparring', annat: 'Annat' };
+  var TC = { styrka: '#e2e8f0', kondition: '#14b8a6', mma: '#60a5fa', striking: '#f59e0b', grappling: '#a78bfa', wrestling: '#a3e635', wall_wrestling: '#f87171', sparring: '#f472b6', annat: '#64748b' };
   var WD = ['sö', 'må', 'ti', 'on', 'to', 'fr', 'lö'];
   function wd(iso) { return WD[new Date(iso + 'T12:00:00').getDay()]; }
   function dm(iso) { return iso.slice(8, 10) + '/' + iso.slice(5, 7); }
@@ -795,7 +795,7 @@ function matchCard(id){
     function item(m){var dl=m.days_left;var when=dl>0?dl+' dagar kvar':dl===0?'idag':'för '+(-dl)+' dagar sedan';
       var res=m.result?'<span class="pill">'+esc(m.result)+(m.method?' · '+esc(m.method):'')+(m.round?' · rond '+esc(m.round):'')+'</span> ':'';
       return '<div class="note"><b>'+esc(m.match_date)+'</b> <span class="pill">'+esc(when)+'</span> '+res+(m.event?'<div>'+esc(m.event)+'</div>':'')+(m.opponent?'<div class="small">Mot: '+esc(m.opponent)+'</div>':'')+(m.weight_limit_kg!=null?'<div class="small">Viktgräns: '+esc(m.weight_limit_kg)+' kg</div>':'')+(m.note?'<div class="small muted">'+esc(m.note)+'</div>':'')+
-        ' <button class="btn sec sm" data-mre="'+esc(m.id)+'">Ändra</button> <button class="btn sec sm" data-mrm="'+esc(m.id)+'">Ta bort</button></div>'}
+        (m.opponent_id&&m.days_left>=0?' <button class="btn sm" data-man="'+esc(m.id)+'">Analysera mot fighterns data</button>':'')+' <button class="btn sec sm" data-mre="'+esc(m.id)+'">Ändra</button> <button class="btn sec sm" data-mrm="'+esc(m.id)+'">Ta bort</button></div>'}
     var up=ms.filter(function(m){return m.days_left>=0}).reverse(),past=ms.filter(function(m){return m.days_left<0});
     var list=(up.length?'<p class="small muted" style="margin:6px 0 2px">Kommande</p>'+up.map(item).join(''):'')+(past.length?'<p class="small muted" style="margin:8px 0 2px">Tidigare</p>'+past.map(item).join(''):'');
     var oo='<option value="">'+(ops.length?'Välj motståndare…':'Inga motståndare inlagda – skapa under fliken Motståndare')+'</option>'+ops.map(function(o){return '<option value="'+esc(o.id)+'">'+esc(o.full_name)+(o.promotion?' ('+esc(o.promotion)+')':'')+'</option>'}).join('');
@@ -806,7 +806,10 @@ function matchCard(id){
       '<label for="mfrd">Rond</label><input type="number" min="1" max="10" inputmode="numeric" id="mfrd" placeholder="Valfritt"><label for="mfn">Anteckning</label><input id="mfn" placeholder="Valfritt"><p id="mfm" class="small"></p><button class="btn sm" id="mfs">Spara match</button></details>';
     var eid=null,det=box.querySelector('details');
     $('mfop').onchange=function(){var o=ops.filter(function(x){return String(x.id)===$('mfop').value})[0];if(o)$('mfo').value=o.full_name};
-    box.onclick=function(e){var r=e.target.getAttribute('data-mrm'),c=e.target.getAttribute('data-mre');
+    if(!('_fold' in box))box._fold=box.onclick||null;box.onclick=function(e){if(box._fold)box._fold.call(box,e);var r=e.target.getAttribute('data-mrm'),c=e.target.getAttribute('data-mre'),an=e.target.getAttribute('data-man');
+      if(an){var mm=ms.filter(function(x){return x.id===an})[0];if(mm){e.target.disabled=true;e.target.textContent='Öppnar…';
+        rpc('fp3_list_matchups').then(function(l){var ex=(l||[]).filter(function(x){return x.fighter_id===id&&x.opponent_id===mm.opponent_id})[0];
+          return ex?ex:rpc('fp3_create_matchup',{p_fighter_id:id,p_opponent_id:mm.opponent_id,p_event_name:mm.event||null,p_event_date:mm.match_date})}).then(function(x){S.tab='matches';S.view=x.id;render()}).catch(function(er){e.target.disabled=false;e.target.textContent='Analysera mot fighterns data';alert(er.message)})}return}
       if(r){if(!confirm('Ta bort matchen?'))return;e.target.disabled=true;rpc('fp9_match_remove',{p_id:r}).then(function(){matchCard(id)}).catch(function(er){alert(er.message)})}
       if(c){var m=ms.filter(function(x){return x.id===c})[0];if(m){eid=c;$('mfd').value=m.match_date;$('mfe').value=m.event||'';$('mfo').value=m.opponent||'';$('mfop').value=m.opponent_id||'';$('mfw').value=m.weight_limit_kg==null?'':m.weight_limit_kg;$('mfn').value=m.note||'';$('mfr').value=m.result||'';$('mfm2').value=m.method||'';$('mfrd').value=m.round||'';$('mfh').textContent='Ändra match';det.open=true;det.scrollIntoView({block:'nearest'})}}};
     $('mfs').onclick=function(){var d=$('mfd').value;if(!d){fail($('mfm'),new Error('Välj datum.'));return}
@@ -837,7 +840,7 @@ function passCard(id,fname){
       var v=$('pnc').value,cat,q=null;if(v.charAt(0)==='q'){var qq=CQ[+v.slice(1)];cat=qq[1];q=qq[2]}else cat=v.slice(1);
       var d=$('pnd').value,ty=$('pnt').value,fg=$('pnf').value;this.disabled=true;m.className='small muted';m.textContent='Sparar…';var b=this;
       rpc('fp2_coach_add_note',{p_fighter_id:id,p_date:d,p_type:ty,p_category:cat,p_question:q,p_note:t}).then(function(){return fg?rpc('fp6_set_flag',{p_date:d,p_type:ty,p_fighter_id:id,p_flag:fg}):null}).then(function(){passCard(id,fname)}).catch(function(er){b.disabled=false;fail(m,er)})};
-    box.onclick=function(e){var r=e.target.getAttribute('data-prm');if(r){e.target.disabled=true;rpc('fp2_coach_remove_note',{p_id:r}).then(function(){passCard(id,fname)}).catch(function(er){alert(er.message)})}};
+    if(!('_fold' in box))box._fold=box.onclick||null;box.onclick=function(e){if(box._fold)box._fold.call(box,e);var r=e.target.getAttribute('data-prm');if(r){e.target.disabled=true;rpc('fp2_coach_remove_note',{p_id:r}).then(function(){passCard(id,fname)}).catch(function(er){alert(er.message)})}};
   }).catch(function(er){fail(box,er)});
 }
 function fighterView(id){
@@ -933,16 +936,23 @@ function renderVal(v){
   if(typeof v==='object')return Object.keys(v).map(function(k){return '<div><b>'+esc(k.replace(/_/g,' '))+':</b> '+renderVal(v[k])+'</div>'}).join('');
   return esc(v);
 }
-var GP=[['summary','Sammanfattning'],['plan_a','Plan A'],['plan_b','Plan B'],['round_strategy','Rundstrategi'],['corner_calls','Hörnrop'],['recommended_tactics','Taktik'],['risks','Risker'],['physical_matchup_analysis','Fysisk matchup'],['weight_class_context','Viktklass'],['my_technical_profile','Min fighter – teknik'],['their_technical_profile','Motståndare – teknik'],['general_profile_check','Generell profil – check'],['strengths_vs_weaknesses','Styrkor vs svagheter'],['established_patterns','Etablerade mönster'],['single_observations','Enstaka observationer'],['uncertainty_notes','Osäkerheter']];
+var GP=[['summary','Sammanfattning'],['data_basis','Vad analysen bygger på'],['fighter_data_vs_opponent','Motståndaren mot fighterns data'],['prep_priorities','Förberedelse – prioriteringar'],['plan_a','Plan A'],['plan_b','Plan B'],['round_strategy','Rundstrategi'],['corner_calls','Hörnrop'],['recommended_tactics','Taktik'],['risks','Risker'],['physical_matchup_analysis','Fysisk matchup'],['weight_class_context','Viktklass'],['my_technical_profile','Min fighter – teknik'],['their_technical_profile','Motståndare – teknik'],['general_profile_check','Generell profil – check'],['strengths_vs_weaknesses','Styrkor vs svagheter'],['established_patterns','Etablerade mönster'],['single_observations','Enstaka observationer'],['uncertainty_notes','Osäkerheter']];
+function gpVal(k,v){
+  if(k==='fighter_data_vs_opponent'&&Array.isArray(v))return v.map(function(x){var c=String(x.confidence||'').toLowerCase(),col=c==='hög'?'#34d399':c==='medel'?'#fbbf24':'#f97316';
+    return '<div class="note"><b>'+esc(x.opponent_trait||'')+'</b> '+(x.type?'<span class="pill">'+esc(x.type)+'</span> ':'')+(x.seen?'<span class="pill">'+esc(x.seen)+'</span> ':'')+(x.confidence?'<span class="pill" style="color:'+col+'">Säkerhet: '+esc(x.confidence)+'</span>':'')+
+      (x.fighter_data?'<div class="small"><b>Fighterns data:</b> '+esc(x.fighter_data)+'</div>':'')+(x.assessment?'<div class="small"><b>Bedömning:</b> '+esc(x.assessment)+'</div>':'')+(x.action?'<div class="small"><b>Åtgärd:</b> '+esc(x.action)+'</div>':'')+'</div>'}).join('');
+  if(k==='prep_priorities'&&Array.isArray(v))return '<ol>'+v.map(function(x){return '<li><b>'+esc(x.focus||'')+'</b>'+(x.why?'<div class="small">'+esc(x.why)+'</div>':'')+(x.how?'<div class="small"><b>Hur:</b> '+esc(x.how)+'</div>':'')+(x.timing?'<div class="small muted">'+esc(x.timing)+'</div>':'')+'</li>'}).join('')+'</ol>';
+  return renderVal(v);
+}
 function matchView(id){
   app.innerHTML='<p class="muted">Laddar…</p>';
   Promise.all([rpc('fp3_get_matchup_context',{p_matchup_id:id}),rpc('fp3_get_latest_gameplan',{p_matchup_id:id})]).then(function(r){
     var c=r[0]||{},g=r[1],m=c.matchup||{},f=(c.fighter||{}).fighter||{},o=(c.opponent||{}).opponent||{};
     app.innerHTML='<div class="row" style="justify-content:space-between"><button class="btn sec sm" id="bk">← Lista</button><button class="btn sec sm" id="dl" hidden>Radera</button></div>'+
      '<div class="card"><h2>'+esc(f.name)+' vs '+esc(o.full_name)+'</h2><div class="small muted">'+esc([m.event_name,m.event_date,m.status].filter(Boolean).join(' · '))+'</div>'+
-     '<p class="small">Gameplanen bygger bara på det du lagt in som anteckningar/observationer. Fyll på dem först för bättre resultat.</p><p id="m" class="small"></p><button class="btn" id="gen">'+(g?'Generera ny gameplan':'Generera gameplan')+'</button></div><div id="gp"></div>';
+     '<p class="small">Analysen väger motståndarens observationer, med hur många gånger du sett dem, mot fighterns egen träning, profil, skador, vikt och dagar kvar till match. Ju mer som är loggat och observerat, desto säkrare blir den, och den säger när underlaget är tunt.</p><p id="m" class="small"></p><button class="btn" id="gen">'+(g?'Generera ny gameplan':'Generera gameplan')+'</button></div><div id="gp"></div>';
     $('bk').onclick=function(){S.view=null;render()};
-    function show(g){$('gp').innerHTML=g?'<div class="card gp"><div class="small muted">Genererad '+esc(String(g.created_at||'').slice(0,16).replace('T',' '))+(g.generated_by?' · '+esc(g.generated_by):'')+'</div>'+GP.map(function(k){return g[k[0]]==null?'':'<h3>'+k[1]+'</h3>'+renderVal(g[k[0]])}).join('')+'</div>':''}
+    function show(g){$('gp').innerHTML=g?'<div class="card gp"><div class="small muted">Genererad '+esc(String(g.created_at||'').slice(0,16).replace('T',' '))+(g.generated_by?' · '+esc(g.generated_by):'')+'</div>'+GP.map(function(k){return g[k[0]]==null?'':'<h3>'+k[1]+'</h3>'+gpVal(k[0],g[k[0]])}).join('')+'</div>':''}
     show(g);
     $('gen').onclick=function(){var b=this;b.disabled=true;b.textContent='Genererar… (kan ta en minut)';$('m').className='small muted';$('m').textContent='';
       api('/functions/v1/coach_gameplan',{matchup_id:id}).then(function(x){show(x.gameplan);b.disabled=false;b.textContent='Generera ny gameplan'}).catch(function(er){b.disabled=false;b.textContent='Generera gameplan';fail($('m'),er)})};
@@ -950,10 +960,10 @@ function matchView(id){
 }
 
 /* ---------- Pass ---------- */
-var TYPES=[['grappling','Grappling'],['striking','Striking'],['mma','MMA'],['wrestling','Brottning'],['styrka','Styrka'],['kondition','Kondition'],['sparring','Sparring'],['annat','Annat']];
+var TYPES=[['grappling','Grappling'],['striking','Striking'],['mma','MMA'],['wrestling','Brottning'],['wall_wrestling','Väggbrottning'],['styrka','Styrka'],['kondition','Kondition'],['sparring','Sparring'],['annat','Annat']];
 var TN={};TYPES.forEach(function(t){TN[t[0]]=t[1]});
 function chip(l,v){return v==null?'':'<span class="pill">'+l+' '+esc(v)+'</span>'}
-var COMBAT=[['mma','MMA'],['striking','Striking'],['grappling','Grappling'],['wrestling','Brottning'],['sparring','Sparring']];
+var COMBAT=[['mma','MMA'],['striking','Striking'],['grappling','Grappling'],['wrestling','Brottning'],['wall_wrestling','Väggbrottning'],['sparring','Sparring']];
 var CQ=[['Teknik och taktik','overall_game','Teknik och taktik'],['Fysik och mående','physical','Fysik och mående'],['Nästa steg','overall_game','Nästa steg']];
 var FLAGS=[['','Ingen flagga'],['folj_upp','Följ upp'],['prata','Prata med fightern'],['skadeoro','Skadeoro']];
 var FN={folj_upp:'Följ upp',prata:'Prata med fightern',skadeoro:'Skadeoro'};
@@ -1058,7 +1068,7 @@ function loadPass(){
     box.onchange=function(e){var t=e.target,q=t.getAttribute('data-q'),f=t.getAttribute('data-fl');
       if(q!==null)box.querySelector('[data-cw="'+q+'"]').hidden=t.value!=='free';
       if(f!==null){var fm=box.querySelector('[data-fm="'+f+'"]');fm.className='small muted';fm.textContent=' sparar…';rpc('fp6_set_flag',{p_date:S.date,p_type:S.type,p_fighter_id:rows[+f].fighter_id,p_flag:t.value||null}).then(function(){fm.className='small ok';fm.textContent=' sparad'}).catch(function(er){fail(fm,er)})}};
-    box.onclick=function(e){var a=e.target.getAttribute('data-add'),d=e.target.getAttribute('data-rm');
+    if(!('_fold' in box))box._fold=box.onclick||null;box.onclick=function(e){if(box._fold)box._fold.call(box,e);var a=e.target.getAttribute('data-add'),d=e.target.getAttribute('data-rm');
       if(a!==null){a=+a;var sel=box.querySelector('[data-q="'+a+'"]'),ta=box.querySelector('[data-t="'+a+'"]'),m=box.querySelector('[data-m="'+a+'"]'),t=nz(ta.value);if(!t){fail(m,new Error('Skriv något först'));return}
         var cat,q=null;if(sel.value==='free'){cat=box.querySelector('[data-c="'+a+'"]').value}else{var qq=CQ[+sel.value];cat=qq[1];q=qq[2]}
         m.className='small muted';m.textContent='Sparar…';
@@ -1118,7 +1128,7 @@ function setPasswordForm(tok){
 }
 
 /* ---------- Dashboard (ny vy, bara läsning, ändrar ingen data) ---------- */
-var DT={striking:['Striking','#f59e0b'],grappling:['Grappling','#a78bfa'],mma:['MMA','#60a5fa'],kondition:['Kondition','#14b8a6'],styrka:['Styrka','#e2e8f0'],wrestling:['Brottning','#a3e635'],sparring:['Sparring','#f472b6'],annat:['Annat','#64748b']};
+var DT={striking:['Striking','#f59e0b'],grappling:['Grappling','#a78bfa'],mma:['MMA','#60a5fa'],kondition:['Kondition','#14b8a6'],styrka:['Styrka','#e2e8f0'],wrestling:['Brottning','#a3e635'],wall_wrestling:['Väggbrottning','#f87171'],sparring:['Sparring','#f472b6'],annat:['Annat','#64748b']};
 function dtl(k){return (DT[k]||[k])[0]}
 function dtc(k){return (DT[k]||[k,'#94a3b8'])[1]}
 function dn(s){var p=String(s).slice(0,10).split('-');return Date.UTC(+p[0],+p[1]-1,+p[2])/864e5}

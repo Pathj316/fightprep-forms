@@ -238,7 +238,7 @@ main{max-width:640px}
   'use strict';
   var SUPABASE_URL = 'https://rgsbhkqwmilragkiogkr.supabase.co';
   var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnc2Joa3F3bWlscmFna2lvZ2tyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxOTk3MzQsImV4cCI6MjA4MDc3NTczNH0.cCtGnUwa3ynQNDUIYhhhXT6vT04MeaM1mn3flHgFEEU';
-  var TYPES = [['styrka','Styrka'],['kondition','Kondition'],['mma','MMA'],['striking','Striking'],['grappling','Grappling'],['wrestling','Brottning'],['sparring','Sparring'],['annat','Annat']];
+  var TYPES = [['styrka','Styrka'],['kondition','Kondition'],['mma','MMA'],['striking','Striking'],['grappling','Grappling'],['wrestling','Brottning'],['wall_wrestling','Väggbrottning'],['sparring','Sparring'],['annat','Annat']];
   var TNAME = {}; TYPES.forEach(function (t) { TNAME[t[0]] = t[1]; });
   var MINS = [30, 45, 60, 75, 90, 120];
   var ERRORS = {
@@ -255,8 +255,8 @@ main{max-width:640px}
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 /* ---- VZ: grafer och analyskort (ingen extern kod) ---- */
 var VZ = (function () {
-  var TN = { styrka: 'Styrka', kondition: 'Kondition', mma: 'MMA', striking: 'Striking', grappling: 'Grappling', wrestling: 'Brottning', sparring: 'Sparring', annat: 'Annat' };
-  var TC = { styrka: '#e2e8f0', kondition: '#14b8a6', mma: '#60a5fa', striking: '#f59e0b', grappling: '#a78bfa', wrestling: '#a3e635', sparring: '#f472b6', annat: '#64748b' };
+  var TN = { styrka: 'Styrka', kondition: 'Kondition', mma: 'MMA', striking: 'Striking', grappling: 'Grappling', wrestling: 'Brottning', wall_wrestling: 'Väggbrottning', sparring: 'Sparring', annat: 'Annat' };
+  var TC = { styrka: '#e2e8f0', kondition: '#14b8a6', mma: '#60a5fa', striking: '#f59e0b', grappling: '#a78bfa', wrestling: '#a3e635', wall_wrestling: '#f87171', sparring: '#f472b6', annat: '#64748b' };
   var WD = ['sö', 'må', 'ti', 'on', 'to', 'fr', 'lö'];
   function wd(iso) { return WD[new Date(iso + 'T12:00:00').getDay()]; }
   function dm(iso) { return iso.slice(8, 10) + '/' + iso.slice(5, 7); }
@@ -516,7 +516,7 @@ var VZ = (function () {
   }
 
 /* ---------- Dashboard (ny vy, bara läsning, ändrar ingen data) ---------- */
-var DT={striking:['Striking','#f59e0b'],grappling:['Grappling','#a78bfa'],mma:['MMA','#60a5fa'],kondition:['Kondition','#14b8a6'],styrka:['Styrka','#e2e8f0'],wrestling:['Brottning','#a3e635'],sparring:['Sparring','#f472b6'],annat:['Annat','#64748b']};
+var DT={striking:['Striking','#f59e0b'],grappling:['Grappling','#a78bfa'],mma:['MMA','#60a5fa'],kondition:['Kondition','#14b8a6'],styrka:['Styrka','#e2e8f0'],wrestling:['Brottning','#a3e635'],wall_wrestling:['Väggbrottning','#f87171'],sparring:['Sparring','#f472b6'],annat:['Annat','#64748b']};
 function dtl(k){return (DT[k]||[k])[0]}
 function dtc(k){return (DT[k]||[k,'#94a3b8'])[1]}
 function dn(s){var p=String(s).slice(0,10).split('-');return Date.UTC(+p[0],+p[1]-1,+p[2])/864e5}
