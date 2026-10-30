@@ -299,7 +299,7 @@ input,select,textarea{background:#10201a;border-radius:10px}
 <button class="tab" data-tab="opps">Motståndare</button>
 <button class="tab" data-tab="matches">Matcher</button></nav></header>
 <main id="app"></main>
-<footer class="ftr">Endast coachen har tillgång till den här vyn. · Version 29 okt (2), motståndarprofil med observationer</footer>
+<footer class="ftr">Endast coachen har tillgång till den här vyn. · Version 30 okt, veckovy i Pass + morgonkoll</footer>
 <script>
 (function(){
 'use strict';
@@ -818,24 +818,42 @@ function matchCard(id){
       rpc('fp12_match_save',{p_fighter_id:id,p_date:d,p_event:$('mfe').value,p_opponent:$('mfo').value,p_opponent_id:$('mfop').value||null,p_weight_kg:w===''?null:Number(w),p_note:$('mfn').value,p_result:$('mfr').value||null,p_method:$('mfm2').value||null,p_round:rd===''?null:Number(rd),p_id:eid}).then(function(){matchCard(id)}).catch(function(er){b.disabled=false;fail($('mfm'),er)})};
   }).catch(function(er){fail(box,er)});
 }
+function addDays(ds,n){var d=new Date(ds+'T12:00:00');d.setDate(d.getDate()+n);return iso(d)}
+function wkStart(ds){var d=new Date(ds+'T12:00:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return iso(d)}
+function isoWeek(ds){var d=new Date(ds+'T12:00:00');var t=new Date(d);t.setDate(t.getDate()+3-((t.getDay()+6)%7));var w1=new Date(t.getFullYear(),0,4);return 1+Math.round(((t-w1)/864e5-3+((w1.getDay()+6)%7))/7)}
+var MON=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+function wkRange(k){var a=new Date(k+'T12:00:00'),b=new Date(addDays(k,6)+'T12:00:00');return a.getDate()+' '+MON[a.getMonth()]+' – '+b.getDate()+' '+MON[b.getMonth()]}
+function hhmm(t){try{return new Date(t).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}catch(e){return''}}
 function passCard(id,fname){
   var box=$('pc');if(!box)return;
-  rpc('fp8_fighter_passes',{p_fighter_id:id,p_days:90}).then(function(days){days=days||[];
+  rpc('fp12_fighter_days',{p_fighter_id:id,p_days:90}).then(function(days){days=days||[];
     var form='<details class="card" style="margin:0 0 10px"><summary><b>+ Lägg till anteckning</b></summary><div class="g2"><div><label for="pnd">Datum</label><input type="date" id="pnd" value="'+esc(today())+'"></div><div><label for="pnt">Passtyp</label><select id="pnt">'+opts(COMBAT,'mma')+'</select></div></div>'+
       '<div id="vcf" style="margin:8px 0"></div><label for="pnc">Anteckning om</label><select id="pnc">'+CQ.map(function(q,qi){return '<option value="q'+qi+'">'+esc(q[0])+'</option>'}).join('')+CATS.map(function(c){return '<option value="c'+esc(c[0])+'">'+esc(c[1])+'</option>'}).join('')+'</select>'+
       '<textarea id="pnx" style="margin-top:8px" placeholder="Skriv fritt…"></textarea><label for="pnf">Flagga</label><select id="pnf">'+opts(FLAGS,'')+'</select><p id="pnm" class="small"></p><button class="btn sm" id="pns">Spara</button></details>';
-    var list=days.map(function(d,i){
+    function dayCard(d){
       var dt=new Date(d.date+'T12:00:00'),types={};
       (d.passes||[]).forEach(function(p){(p.types||[]).forEach(function(t){types[t]=1})});(d.notes||[]).forEach(function(n){types[n.type]=1});
       var fl=(d.flags||[]).map(function(f){return '<span class="pill" style="color:var(--danger)">'+esc(FN[f.flag]||f.flag)+'</span>'}).join('');
-      var head='<summary><b>'+WDN[dt.getDay()]+' '+esc(d.date)+'</b> '+Object.keys(types).map(function(t){return '<span class="pill">'+esc(TN[t]||t)+'</span>'}).join('')+(d.passes&&d.passes.length?chip('RPE',d.passes.map(function(p){return p.rpe}).join('/')):'')+fl+((d.notes||[]).length?' <span class="pill ok">'+d.notes.length+' anteckn.</span>':'')+'</summary>';
+      var head='<summary><b>'+WDN[dt.getDay()]+' '+esc(d.date)+'</b> '+(d.date===today()?'<span class="pill ok">Idag</span> ':'')+(d.daily?'<span class="pill">Morgonkoll</span>':'')+Object.keys(types).map(function(t){return '<span class="pill">'+esc(TN[t]||t)+'</span>'}).join('')+(d.passes&&d.passes.length?chip('RPE',d.passes.map(function(p){return p.rpe}).join('/')):'')+fl+((d.notes||[]).length?' <span class="pill ok">'+d.notes.length+' anteckn.</span>':'')+'</summary>';
       var body='';
-      (d.passes||[]).forEach(function(p){body+='<div class="small" style="margin-bottom:6px"><b>Fighterns svar:</b> '+(p.types||[]).map(function(t){return '<span class="pill">'+esc(TN[t]||t)+'</span>'}).join('')+chip('RPE',p.rpe)+(p.minutes?'<span class="pill">'+esc(p.minutes)+' min</span>':'')+(p.pain?'<span class="pill" style="color:var(--danger)">Värk'+(p.pain_location?': '+esc(p.pain_location):'')+'</span>':'')+(p.did?'<div><b>Gjorde:</b> '+esc(p.did)+'</div>':'')+(p.felt?'<div><b>Kändes:</b> '+esc(p.felt)+'</div>':'')+'</div>'});
-      if(d.daily)body+='<div class="small muted" style="margin-bottom:6px">Morgonkoll: sömn '+esc(d.daily.sleep)+'/5 · energi '+esc(d.daily.energy)+'/5 · ömhet '+esc(d.daily.soreness)+'/5 · stress '+esc(d.daily.stress)+'/5'+(d.daily.weight!=null?' · '+esc(d.daily.weight)+' kg':'')+(d.daily.pain?' · värk'+(d.daily.pain_location?': '+esc(d.daily.pain_location):''):'')+'</div>';
+      (d.passes||[]).forEach(function(p){body+='<div class="small" style="margin-bottom:6px"><b>Fighterns svar:</b> '+(p.types||[]).map(function(t){return '<span class="pill">'+esc(TN[t]||t)+'</span>'}).join('')+chip('RPE',p.rpe)+(p.minutes?'<span class="pill">'+esc(p.minutes)+' min</span>':'')+(p.at?'<span class="pill">loggat '+hhmm(p.at)+'</span>':'')+(p.pain?'<span class="pill" style="color:var(--danger)">Värk'+(p.pain_location?': '+esc(p.pain_location):'')+'</span>':'')+(p.did?'<div><b>Gjorde:</b> '+esc(p.did)+'</div>':'')+(p.felt?'<div><b>Kändes:</b> '+esc(p.felt)+'</div>':'')+'</div>'});
+      if(d.daily)body+='<div class="small muted" style="margin-bottom:6px">Morgonkoll'+(d.daily.at?' '+hhmm(d.daily.at):'')+': sömn '+esc(d.daily.sleep)+'/5 · energi '+esc(d.daily.energy)+'/5 · ömhet '+esc(d.daily.soreness)+'/5 · stress '+esc(d.daily.stress)+'/5'+(d.daily.weight!=null?' · '+esc(d.daily.weight)+' kg':'')+(d.daily.pain?' · värk'+(d.daily.pain_location?': '+esc(d.daily.pain_location):''):'')+'</div>';
       body+=(d.notes||[]).map(function(n){return '<div class="note"><q>'+esc((TN[n.type]||n.type)+' · '+(CN[n.category]||n.category)+(n.question?' – '+n.question:''))+'</q>'+esc(n.note)+' <button class="btn sec sm" data-prm="'+esc(n.id)+'">Ta bort</button></div>'}).join('');
-      return '<details class="card" style="margin:0 0 8px"'+''+'>'+head+'<div style="margin-top:8px">'+(body||'<span class="muted small">Inget inlagt.</span>')+'</div></details>';
-    }).join('')||'<p class="muted small">Inga pass inlagda för den här fightern de senaste 90 dagarna.</p>';
-    box.innerHTML='<h3 style="margin:0 0 6px">Pass</h3><p class="small muted">Fighterns egna svar och dina anteckningar, dag för dag. Senaste 90 dagarna.</p>'+form+list;
+      return '<details class="card" style="margin:0 0 8px"'+(d.date===today()?' open':'')+'>'+head+'<div style="margin-top:8px">'+(body||'<span class="muted small">Inget loggat.</span>')+'</div></details>';
+    }
+    var byWeek={},order=[],curK=wkStart(today());
+    days.forEach(function(d){var k=wkStart(d.date);if(!byWeek[k]){byWeek[k]=[];order.push(k)}byWeek[k].push(d)});
+    if(!byWeek[curK]){byWeek[curK]=[];order.push(curK)}
+    order.sort().reverse();
+    var last=null;days.forEach(function(d){if(d.daily&&d.daily.at&&(!last||d.daily.at>last.at))last={at:d.daily.at,what:'morgonkoll'};(d.passes||[]).forEach(function(p){if(p.at&&(!last||p.at>last.at))last={at:p.at,what:'pass'+((p.types||[])[0]?' ('+(TN[p.types[0]]||p.types[0]).toLowerCase()+')':'')}})});
+    var lastTxt=last?'<p class="small" style="margin:0 0 8px"><b>Senast loggat:</b> '+esc(last.what)+' '+(iso(new Date(last.at))===today()?'i dag':esc(iso(new Date(last.at))))+' kl '+hhmm(last.at)+'</p>':'';
+    var list=order.map(function(k){var isCur=k===curK,ds=byWeek[k];
+      var np=0,mins=0,rp=[],mk=0;ds.forEach(function(d){(d.passes||[]).forEach(function(p){np++;mins+=Number(p.minutes||0);if(p.rpe!=null)rp.push(Number(p.rpe))});if(d.daily)mk++});
+      var rows=ds;
+      if(isCur){rows=[];for(var i=0;i<7;i++){var di=addDays(k,i);if(di>today())break;rows.push(ds.filter(function(x){return x.date===di})[0]||{date:di,passes:[],notes:[],flags:[],daily:null})}rows.reverse()}
+      var sum=np+' pass'+(mins?' · '+Math.floor(mins/60)+' tim '+(mins%60)+' min':'')+(rp.length?' · RPE snitt '+(Math.round(rp.reduce(function(a,b){return a+b},0)/rp.length*10)/10).toString().replace('.',','):'')+' · '+mk+' morgonkollar';
+      return '<details class="card" style="margin:0 0 10px'+(isCur?';border-color:var(--accent)':'')+'"'+(isCur?' open':'')+'><summary><b>Vecka '+isoWeek(k)+'</b> · '+wkRange(k)+(isCur?' <span class="pill ok">Denna vecka</span>':'')+'<div class="small muted" style="margin-top:2px">'+esc(sum)+'</div></summary><div style="margin-top:8px">'+rows.map(dayCard).join('')+'</div></details>'}).join('')||'<p class="muted small">Inga pass inlagda för den här fightern de senaste 90 dagarna.</p>';
+    box.innerHTML='<h3 style="margin:0 0 6px">Pass</h3><p class="small muted">Fighterns egna svar, morgonkollar och dina anteckningar, vecka för vecka. Den pågående veckan är uppfälld, klicka på en annan vecka för att öppna den. Senaste 90 dagarna.</p>'+lastTxt+form+list;
     voiceCard({box:'vcf',fixed:[{id:id,name:fname||'Fightern'}],date:function(){return $('pnd').value},type:function(){return $('pnt').value},after:function(){passCard(id,fname)}});
     $('pns').onclick=function(){var t=nz($('pnx').value),m=$('pnm');if(!t){fail(m,new Error('Skriv något först'));return}
       var v=$('pnc').value,cat,q=null;if(v.charAt(0)==='q'){var qq=CQ[+v.slice(1)];cat=qq[1];q=qq[2]}else cat=v.slice(1);
